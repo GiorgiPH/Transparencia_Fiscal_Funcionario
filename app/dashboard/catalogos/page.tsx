@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth"
 
 export default function CatalogosPage() {
   const { user } = useAuth()
-  const { categories, isLoading } = useCatalogs()
+  const { rootCatalogs, isLoading } = useCatalogs()
 
   const canUpload = user?.rol === "Admin" || user?.rol === "Upload"
 
@@ -37,7 +37,7 @@ export default function CatalogosPage() {
 
         {/* Categories Accordion */}
         <div className="space-y-4">
-          {categories.map((category, index) => (
+          {rootCatalogs.map((category, index) => (
             <CategoryAccordion key={category.id} category={category} index={index + 1} canUpload={canUpload} />
           ))}
         </div>

@@ -1,67 +1,82 @@
-import type { Category, Subcategory, Document } from "@/types/catalog"
-import { THEMATIC_CATEGORIES } from "@/types/catalog"
+import type { Catalogo, Documento, TipoDocumento } from "@/types/catalog"
+import { apiClient } from "@/lib/api/axios-client"
 
 export const catalogService = {
-  async getCategories(): Promise<Category[]> {
-    // Mock implementation - replace with actual API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
+  // Obtener catálogos raíz
+  async getRootCatalogs(): Promise<Catalogo[]> {
+    return apiClient.get<Catalogo[]>("/admin/catalogos/raices")
+  },
 
-    // Mock data for the 7 thematic categories
-    return THEMATIC_CATEGORIES.map((nombre, index) => ({
-      id: `cat-${index + 1}`,
-      nombre,
-      descripcion: `Documentación relacionada con ${nombre.toLowerCase()}`,
-      subcategorias: [],
+  // Obtener hijos de un catálogo
+  async getCatalogChildren(catalogId: number): Promise<Catalogo[]> {
+    return apiClient.get<Catalogo[]>(`/admin/catalogos/${catalogId}/hijos`)
+  },
+
+  // Obtener documento por ID
+  async getDocument(documentId: number): Promise<Documento> {
+    return apiClient.get<Documento>(`/admin/documentos/${documentId}`)
+  },
+
+  // Crear documento (multipart/form-data)
+  async createDocument(formData: FormData): Promise<Documento> {
+    return apiClient.post<Documento>("/admin/documentos", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+  },
+
+  // Actualizar documento (multipart/form-data)
+  async updateDocument(documentId: number, formData: FormData): Promise<Documento> {
+    return apiClient.patch<Documento>(`/admin/documentos/${documentId}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+  },
+
+  // Eliminar documento
+  async deleteDocument(documentId: number): Promise<void> {
+    return apiClient.delete(`/admin/documentos/${documentId}`)
+  },
+
+  // Obtener tipos de documento
+  async getDocumentTypes(): Promise<TipoDocumento[]> {
+    return apiClient.get<TipoDocumento[]>("/catalogos/tipos-documento")
+  },
+
+  // Métodos legacy para compatibilidad
+  async getCategories(): Promise<any[]> {
+    const catalogs = await this.getRootCatalogs()
+    return catalogs.map(catalog => ({
+      id: catalog.id.toString(),
+      nombre: catalog.nombre,
+      descripcion: catalog.descripcion,
+      subcategorias: []
     }))
   },
 
-  async getSubcategories(categoryId: string): Promise<Subcategory[]> {
-    // Mock implementation
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    // Mock subcategories
-    return [
-      {
-        id: `sub-${categoryId}-1`,
-        nombre: "Documentos Generales",
-        descripcion: "Información general y documentos base",
-        documentos: [],
-      },
-      {
-        id: `sub-${categoryId}-2`,
-        nombre: "Informes Trimestrales",
-        descripcion: "Reportes trimestrales",
-        documentos: [],
-      },
-      {
-        id: `sub-${categoryId}-3`,
-        nombre: "Informes Anuales",
-        descripcion: "Reportes anuales consolidados",
-        documentos: [],
-      },
-    ]
+  async getSubcategories(categoryId: string): Promise<any[]> {
+    const children = await this.getCatalogChildren(parseInt(categoryId))
+    return children.map(child => ({
+      id: child.id.toString(),
+      nombre: child.nombre,
+      descripcion: child.descripcion,
+      documentos: []
+    }))
   },
 
-  async getDocuments(subcategoryId: string): Promise<Document[]> {
-    // Mock implementation
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
+  async getDocuments(subcategoryId: string): Promise<any[]> {
+    // Para compatibilidad, devolver array vacío
     return []
   },
 
-  async uploadDocument(document: Omit<Document, "id" | "uploadedAt">): Promise<Document> {
-    // Mock implementation
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
+  async uploadDocument(document: any): Promise<any> {
+    // Para compatibilidad, devolver mock
     return {
       ...document,
       id: `doc-${Date.now()}`,
       uploadedAt: new Date().toISOString(),
     }
-  },
-
-  async deleteDocument(documentId: string): Promise<void> {
-    // Mock implementation
-    await new Promise((resolve) => setTimeout(resolve, 500))
   },
 }

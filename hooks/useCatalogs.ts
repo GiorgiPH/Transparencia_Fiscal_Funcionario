@@ -98,7 +98,8 @@ export function useCatalogs() {
         ...catalog,
         children: [],
         isExpanded: false,
-        isLoading: false
+        isLoading: false,
+        hasChildren: (catalog._count?.children || 0) > 0
       }))
       setCatalogosTree(treeItems)
       return treeItems
@@ -125,7 +126,8 @@ export function useCatalogs() {
           ...child,
           children: [],
           isExpanded: false,
-          isLoading: false
+          isLoading: false,
+          hasChildren: (child._count?.children || 0) > 0
         })),
         isExpanded: true,
         isLoading: false
@@ -184,7 +186,8 @@ export function useCatalogs() {
         _count: { children: 5, documentos: 0 },
         children: [],
         isExpanded: false,
-        isLoading: false
+        isLoading: false,
+        hasChildren: true
       },
       {
         id: 2,
@@ -204,14 +207,14 @@ export function useCatalogs() {
         _count: { children: 5, documentos: 0 },
         children: [],
         isExpanded: false,
-        isLoading: false
+        isLoading: false,
+        hasChildren: true
       }
     ]
     
     setCatalogosTree(mockData)
     setIsLoading(false)
   }
-
   const clearError = () => {
     setError(null)
   }

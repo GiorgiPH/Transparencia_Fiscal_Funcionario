@@ -20,7 +20,9 @@ export function CatalogoTreeItem({
   selectedId,
   showDocumentos = false,
 }: CatalogoTreeItemProps) {
-  const hasChildren = item.children && item.children.length > 0;
+  const hasChildren = (item.children && item.children.length > 0) || 
+                     (item._count?.children && item._count.children > 0) ||
+                     (item.hasChildren === true);
   const isExpanded = item.isExpanded || false;
   const isLoading = item.isLoading || false;
   const isSelected = selectedId === item.id;

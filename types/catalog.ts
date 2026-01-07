@@ -108,6 +108,7 @@ export interface CatalogoTreeItem extends Catalogo {
   children?: CatalogoTreeItem[]
   isExpanded?: boolean
   isLoading?: boolean
+  hasChildren?: boolean
 }
 
 // Tipos para creación/actualización de documentos

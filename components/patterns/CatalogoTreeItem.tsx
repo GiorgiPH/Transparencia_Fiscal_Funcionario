@@ -1,5 +1,8 @@
-import type { CatalogoTreeItem as CatalogoTreeItemType } from '@/types/catalog';
-import { ChevronRight, ChevronDown, Folder, FileText, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import type { CatalogoTreeItem as CatalogoTreeItemType, DocumentoCreateData, DocumentoUpdateData } from '@/types/catalog';
+import { ChevronRight, ChevronDown, Folder, FileText, AlertCircle, Download, Upload } from 'lucide-react';
+import { DocumentoModal } from './DocumentoModal';
+import { useCatalogs } from '@/hooks/useCatalogs';
 
 interface CatalogoTreeItemProps {
   item: CatalogoTreeItemType;
@@ -20,6 +23,14 @@ export function CatalogoTreeItem({
   selectedId,
   showDocumentos = false,
 }: CatalogoTreeItemProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [selectedTipoDocumentoId, setSelectedTipoDocumentoId] = useState<number | null>(null);
+  const [selectedDocumentoId, setSelectedDocumentoId] = useState<number | null>(null);
+
+  
+  const { createDocument, updateDocument } = useCatalogs();
+  
   const hasChildren = (item.children && item.children.length > 0) || 
                      (item._count?.children && item._count.children > 0) ||
                      (item.hasChildren === true);
@@ -82,6 +93,46 @@ export function CatalogoTreeItem({
         Vacío
       </span>
     );
+  };
+
+  const handleDownload = (tipoDocumentoId: number, documentoId?: number) => {
+    if (!documentoId) return;
+    
+    // Construir URL de descarga usando la URL del backend
+    // La URL base del backend está configurada en axios-client.ts como 'http://localhost:3001'
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const downloadUrl = `${baseUrl}/busqueda-documentos/${documentoId}/descargar`;
+    window.open(downloadUrl, '_blank');
+  };
+
+  const handleOpenModal = (mode: 'create' | 'edit', tipoDocumentoId?: number, documentoId?: number) => {
+    setModalMode(mode);
+    setSelectedTipoDocumentoId(tipoDocumentoId || null);
+    setSelectedDocumentoId(documentoId || null);
+
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTipoDocumentoId(null);
+  };
+
+  const handleSubmitModal = async (data: DocumentoCreateData | DocumentoUpdateData) => {
+    try {
+      if (modalMode === 'create') {
+        await createDocument(data as FormData);
+      } else {
+        // Para editar necesitaríamos el ID del documento
+        // Por ahora, si no hay documentoId, usamos create
+        await updateDocument(selectedDocumentoId!,data as FormData);
+      }
+      // Aquí podríamos refrescar los datos del catálogo
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error al guardar documento:', error);
+      throw error;
+    }
   };
 
   return (
@@ -168,10 +219,13 @@ export function CatalogoTreeItem({
       )}
 
       {/* Documentos section (only for leaf nodes that allow documents) */}
-      {showDocumentos && isExpanded && permiteDocumentos && item.disponibilidadTiposDocumento && (
+      {/*showDocumentos && isExpanded &&*/ permiteDocumentos && item.disponibilidadTiposDocumento && (
         <div style={{ paddingLeft: `${(level + 1) * 24 + 12}px` }} className="mt-2">
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <h4 className="font-medium text-gray-700 mb-2">Documentos disponibles</h4>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-medium text-gray-700">Documentos disponibles</h4>
+              
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {item.disponibilidadTiposDocumento.map((tipo) => (
                 <div
@@ -182,7 +236,7 @@ export function CatalogoTreeItem({
                       : 'border-gray-200 bg-white'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <div>
                       <div className="font-medium text-gray-900">{tipo.nombre}</div>
                       <div className="text-sm text-gray-500">.{tipo.extension}</div>
@@ -200,12 +254,53 @@ export function CatalogoTreeItem({
                       )}
                     </div>
                   </div>
+                  
+                  {/* Action buttons */}
+                  <div className="flex items-center justify-end gap-2 mt-3">
+                    {tipo.disponible ? (
+                      <>
+                        <button
+                          onClick={() => handleDownload(tipo.tipoDocumentoId, tipo.documentoId)}
+                          className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200"
+                        >
+                          <Download className="h-3 w-3 mr-1" />
+                          Descargar
+                        </button>
+                        <button
+                          onClick={() => handleOpenModal('edit', tipo.tipoDocumentoId, tipo.documentoId)}
+                          className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200"
+                        >
+                          <Upload className="h-3 w-3 mr-1" />
+                          Actualizar
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenModal('create', tipo.tipoDocumentoId)}
+                        className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200"
+                      >
+                        <Upload className="h-3 w-3 mr-1" />
+                        Subir
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
       )}
+
+      {/* Documento Modal */}
+      <DocumentoModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmitModal}
+        mode={modalMode}
+        catalogo={item}
+        documentoId={selectedDocumentoId} // Por ahora null, podríamos obtenerlo si estamos editando
+        tipoDocumentoId={selectedTipoDocumentoId}
+      />
     </div>
   );
 }

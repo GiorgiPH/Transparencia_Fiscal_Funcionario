@@ -20,7 +20,7 @@ export interface DisponibilidadTipoDocumento {
   nombre: string
   disponible: boolean
   extension: string
-  documentoId?: string
+  documentoId?: number
   documentoNombre?: string
 }
 

@@ -17,6 +17,7 @@ interface DocumentoModalProps {
   mode: 'create' | 'edit'
   catalogo: CatalogoTreeItem
   documentoId?: number | null
+  tipoDocumentoId?: number | null
 }
 
 export function DocumentoModal({
@@ -25,7 +26,8 @@ export function DocumentoModal({
   onSubmit,
   mode,
   catalogo,
-  documentoId
+  documentoId,
+  tipoDocumentoId
 }: DocumentoModalProps) {
   const { fetchTiposDocumento, tiposDocumento, fetchDocumento } = useCatalogs()
   
@@ -45,16 +47,58 @@ export function DocumentoModal({
 
   useEffect(() => {
     if (isOpen) {
+      console.log("DEBUG: Modal abierto, tipoDocumentoId prop:", tipoDocumentoId)
+      console.log("DEBUG: Mode:", mode)
       loadTiposDocumento()
       if (mode === 'edit' && documentoId) {
         loadDocumento(documentoId)
+      } else if (mode === 'create' && tipoDocumentoId !== null && tipoDocumentoId !== undefined) {
+        setTimeout(() => {
+          console.log("DEBUG: Setting formData.tipo_documento_id to:", tipoDocumentoId.toString())
+        setFormData(prev => {
+          const newFormData = {
+            ...prev,
+            tipo_documento_id: tipoDocumentoId.toString()
+          }
+          console.log("DEBUG: New formData after set:", newFormData)
+          return newFormData
+        })
+        }, 1000);
+        // Inicializar el tipo de documento cuando se abre en modo create
+        
       }
     }
-  }, [isOpen, mode, documentoId])
+  }, [isOpen, mode, documentoId, tipoDocumentoId])
+
+  // Efecto para actualizar el nombre del tipo de documento cuando tiposDocumento cambie
+  useEffect(() => {
+    if (formData.tipo_documento_id && tiposDocumento.length > 0) {
+      console.log("DEBUG: tiposDocumento cargado, formData.tipo_documento_id:", formData.tipo_documento_id)
+      console.log("DEBUG: tiposDocumento encontrado:", tiposDocumento.find(t => t.id === parseInt(formData.tipo_documento_id)))
+    }
+  }, [tiposDocumento, formData.tipo_documento_id])
+
+  // Efecto para resetear el formData cuando el modal se cierre
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData({
+        tipo_documento_id: '',
+        periodicidad: '',
+        archivo: null,
+        nombre: '',
+        descripcion: '',
+        ejercicio_fiscal: new Date().getFullYear().toString(),
+        institucion_emisora: '',
+      })
+      setError(null)
+    }
+  }, [isOpen])
 
   const loadTiposDocumento = async () => {
     try {
+      console.log("DEBUG: Cargando tipos de documento...")
       await fetchTiposDocumento()
+      console.log("DEBUG: tiposDocumento después de fetch:", tiposDocumento)
     } catch (err) {
       setError('Error al cargar tipos de documento')
     }
@@ -64,6 +108,7 @@ export function DocumentoModal({
     setIsLoadingDocumento(true)
     try {
       const documento = await fetchDocumento(id)
+      console.log(documento);
       setFormData({
         tipo_documento_id: documento.tipo_documento_id.toString(),
         periodicidad: documento.periodicidad,
@@ -128,7 +173,7 @@ export function DocumentoModal({
         submitData.archivo = formData.archivo
       }
 
-      if (mode === 'edit' && formData.nombre) {
+      if ( formData.nombre) {
         submitData.nombre = formData.nombre
       }
 
@@ -156,9 +201,31 @@ export function DocumentoModal({
   if (!isOpen) return null
 
   const getTipoDocumentoNombre = (id: string) => {
+    console.log("DEBUG: getTipoDocumentoNombre llamado con id:", id)
+    console.log("DEBUG: tiposDocumento length:", tiposDocumento.length)
     const tipo = tiposDocumento.find(t => t.id === parseInt(id))
-    return tipo?.nombre || 'Tipo de documento'
+    console.log("DEBUG: tipo encontrado:", tipo)
+    return tipo?.nombre || 'Cargando...'
   }
+  const getExtensionesParaTipoDocumento = (tipoDocumentoId: string): string => {
+    if (!tipoDocumentoId) return '.csv,.json,.xml,.xlsx,.xls'; // Valor por defecto
+    
+    const tipo = tiposDocumento.find(t => t.id === parseInt(tipoDocumentoId));
+    if (!tipo) return '.csv,.json,.xml,.xlsx,.xls'; // Valor por defecto si no se encuentra
+    
+    // Manejar la propiedad 'extensiones' si existe, sino usar 'extension'
+    const extensionesRaw = tipo.extensiones || tipo.extension;
+    
+    // Formatear las extensiones para el atributo accept
+    // Ejemplo: "pdf,doc,docx" -> ".pdf,.doc,.docx"
+    // Ejemplo: ".pdf,.doc" -> ".pdf,.doc"
+    const extensionesArray = extensionesRaw
+      .split(',')
+      .map(ext => ext.trim())
+      .map(ext => ext.startsWith('.') ? ext : `.${ext}`);
+    
+    return extensionesArray.join(',');
+  };
 
   const periodicidades = [
     { value: 'anual', label: 'Anual' },
@@ -198,34 +265,48 @@ export function DocumentoModal({
             </div>
           )}
 
+       
           {/* Tipo de Documento */}
+          {mode === 'create' && (
           <div>
             <Label htmlFor="tipo_documento_id">Tipo de Documento *</Label>
             <Select
               value={formData.tipo_documento_id}
               onValueChange={(value) => handleSelectChange('tipo_documento_id', value)}
-              disabled={isLoadingDocumento}
+              disabled={isLoadingDocumento || (tipoDocumentoId !== null && tipoDocumentoId !== undefined)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Seleccione tipo de documento">
-                  {formData.tipo_documento_id 
-                    ? getTipoDocumentoNombre(formData.tipo_documento_id)
-                    : 'Seleccione tipo de documento'}
-                </SelectValue>
+                {tiposDocumento.length === 0 && formData.tipo_documento_id ? (
+                  <div className="flex items-center">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500 mr-2"></div>
+                    <span>Cargando nombre del tipo de documento...</span>
+                  </div>
+                ) : (
+                  <SelectValue placeholder="Seleccione tipo de documento">
+                    {formData.tipo_documento_id 
+                      ? getTipoDocumentoNombre(formData.tipo_documento_id)
+                      : 'Seleccione tipo de documento'}
+                  </SelectValue>
+                )}
               </SelectTrigger>
               <SelectContent>
-                {tiposDocumento.map((tipo: TipoDocumento) => (
-                  <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      <span>{tipo.nombre}</span>
-                      <span className="text-gray-500 text-sm">(.{tipo.extension})</span>
-                    </div>
-                  </SelectItem>
-                ))}
+                {tiposDocumento.length === 0 ? (
+                  <div className="py-2 px-3 text-sm text-gray-500">Cargando tipos de documento...</div>
+                ) : (
+                  tiposDocumento.map((tipo: TipoDocumento) => (
+                    <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        <span>{tipo.nombre}</span>
+                        <span className="text-gray-500 text-sm">(.{tipo.extension})</span>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
+        )}
 
           {/* Periodicidad */}
           <div>
@@ -278,7 +359,7 @@ export function DocumentoModal({
                     type="file"
                     className="hidden"
                     onChange={handleFileChange}
-                    accept=".csv,.json,.xml,.xlsx,.xls"
+                    accept={getExtensionesParaTipoDocumento(formData.tipo_documento_id)}
                   />
                 </label>
               </div>
@@ -286,7 +367,7 @@ export function DocumentoModal({
           </div>
 
           {/* Nombre del Documento (solo para editar) */}
-          {mode === 'edit' && (
+         
             <div>
               <Label htmlFor="nombre">Nombre del Documento</Label>
               <Input
@@ -297,7 +378,7 @@ export function DocumentoModal({
                 placeholder="Ej: Presupuesto de Egresos 2025"
               />
             </div>
-          )}
+          
 
           {/* Descripción */}
           <div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { CatalogoTreeItem as CatalogoTreeItemType, DocumentoCreateData, DocumentoUpdateData } from '@/types/catalog';
-import { ChevronRight, ChevronDown, Folder, FileText, AlertCircle, Download, Upload } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder, FileText, AlertCircle, Download, Upload, Trash2 } from 'lucide-react';
 import { DocumentoModal } from './DocumentoModal';
 import { useCatalogs } from '@/hooks/useCatalogs';
 
@@ -33,7 +33,7 @@ export function CatalogoTreeItem({
   const [selectedDocumentoId, setSelectedDocumentoId] = useState<number | null>(null);
 
   
-  const { createDocument, updateDocument } = useCatalogs();
+  const { createDocument, updateDocument, deleteDocument } = useCatalogs();
   
   const hasChildren = (item.children && item.children.length > 0) || 
                      (item._count?.children && item._count.children > 0) ||
@@ -154,6 +154,39 @@ export function CatalogoTreeItem({
       handleCloseModal();
     } catch (error) {
       console.error('❌ [CatalogoTreeItem] Error al guardar documento:', error);
+      throw error;
+    }
+  };
+
+  const handleDelete = async (tipoDocumentoId: number, documentoId?: number) => {
+    if (!documentoId) return;
+    
+    // Confirmación antes de eliminar
+    const confirmDelete = window.confirm('¿Está seguro de que desea eliminar este documento? Esta acción no se puede deshacer.');
+    if (!confirmDelete) return;
+    
+    console.log('🔴 [CatalogoTreeItem] Eliminando documento ID:', documentoId);
+    
+    try {
+      await deleteDocument(documentoId);
+      console.log('🔴 [CatalogoTreeItem] Documento eliminado exitosamente');
+      
+      // Refrescar los datos del catálogo después de eliminar
+      if (onRefresh) {
+        console.log('🔴 [CatalogoTreeItem] Llamando a onRefresh() con catalogoId:', item.id);
+        await onRefresh(item.id);
+        console.log('🔴 [CatalogoTreeItem] onRefresh() completado');
+      } else {
+        console.warn('⚠️ [CatalogoTreeItem] onRefresh NO está definido!');
+      }
+      
+      // Pequeño delay para asegurar que la UI se actualice
+      console.log('🔴 [CatalogoTreeItem] Esperando 100ms para UI...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+    } catch (error) {
+      console.error('❌ [CatalogoTreeItem] Error al eliminar documento:', error);
+      alert('Error al eliminar el documento. Por favor, intente nuevamente.');
       throw error;
     }
   };
@@ -296,6 +329,13 @@ export function CatalogoTreeItem({
                         >
                           <Upload className="h-3 w-3 mr-1" />
                           Actualizar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(tipo.tipoDocumentoId, tipo.documentoId)}
+                          className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Eliminar
                         </button>
                       </>
                     ) : (

@@ -11,9 +11,10 @@ interface CategoryAccordionProps {
   category: Catalogo
   index: number
   canUpload: boolean
+  onRefresh?: (catalogoId: number) => Promise<void>
 }
 
-export function CategoryAccordion({ category, index, canUpload }: CategoryAccordionProps) {
+export function CategoryAccordion({ category, index, canUpload, onRefresh }: CategoryAccordionProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [treeItems, setTreeItems] = useState<CatalogoTreeItemType[]>([])
   const [isLoadingChildren, setIsLoadingChildren] = useState(false)
@@ -224,6 +225,7 @@ export function CategoryAccordion({ category, index, canUpload }: CategoryAccord
                     onExpand={handleExpand}
                     onCollapse={handleCollapse}
                     onSelect={() => {}}
+                    onRefresh={onRefresh}
                   />
                 </div>
               ))}

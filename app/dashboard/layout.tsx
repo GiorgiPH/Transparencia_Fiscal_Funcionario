@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/features/dashboard/Sidebar"
@@ -12,22 +11,26 @@ import { useAuth } from "@/hooks/useAuth"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, isInitialized } = useAuth()
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    // Solo redirigir si ya terminó la inicialización Y no hay usuario
+    if (isInitialized && !isLoading && !user) {
       router.push("/login")
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, isInitialized, router])
 
-  if (isLoading) {
-    return <Loading message="Cargando..." />
+  // Mostrar loading mientras se inicializa o está cargando
+  if (!isInitialized || isLoading) {
+    return <Loading message="Verificando sesión..." />
   }
 
+  // Si ya inicializó y no hay usuario, no mostrar nada (está redirigiendo)
   if (!user) {
     return null
   }
 
+  // Usuario autenticado, mostrar dashboard
   return (
     <div className="flex min-h-screen">
       <Sidebar user={user} />

@@ -85,7 +85,7 @@ export function LoginForm() {
         </div>
       )}
 
-      <Button type="submit" className="w-full bg-primary hover:bg-primary/90" >
+      <Button type="submit" className="w-full" >
         {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
       </Button>
 

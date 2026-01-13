@@ -12,6 +12,7 @@ interface CatalogoTreeItemProps {
   onSelect?: (item: CatalogoTreeItemType) => void;
   selectedId?: number | null;
   showDocumentos?: boolean;
+  onRefresh?: (catalogoId: number) => Promise<void>; // CAMBIADO: ahora recibe el catalogoId
 }
 
 export function CatalogoTreeItem({
@@ -22,7 +23,10 @@ export function CatalogoTreeItem({
   onSelect,
   selectedId,
   showDocumentos = false,
+  onRefresh,
 }: CatalogoTreeItemProps) {
+  console.log(`🔵 [CatalogoTreeItem] Renderizando item ${item.id} "${item.nombre}", onRefresh existe?:`, !!onRefresh);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedTipoDocumentoId, setSelectedTipoDocumentoId] = useState<number | null>(null);
@@ -119,18 +123,37 @@ export function CatalogoTreeItem({
   };
 
   const handleSubmitModal = async (data: DocumentoCreateData | DocumentoUpdateData) => {
+    console.log('🔵 [CatalogoTreeItem] handleSubmitModal llamado, modalMode:', modalMode);
+    console.log('🔵 [CatalogoTreeItem] onRefresh existe?:', !!onRefresh);
+    
     try {
       if (modalMode === 'create') {
+        console.log('🔵 [CatalogoTreeItem] Creando documento...');
         await createDocument(data as FormData);
       } else {
-        // Para editar necesitaríamos el ID del documento
-        // Por ahora, si no hay documentoId, usamos create
-        await updateDocument(selectedDocumentoId!,data as FormData);
+        console.log('🔵 [CatalogoTreeItem] Actualizando documento ID:', selectedDocumentoId);
+        await updateDocument(selectedDocumentoId!, data as FormData);
       }
-      // Aquí podríamos refrescar los datos del catálogo
+      
+      console.log('🔵 [CatalogoTreeItem] Documento guardado exitosamente');
+      
+      // Refrescar los datos del catálogo después de crear/actualizar
+      if (onRefresh) {
+        console.log('🔵 [CatalogoTreeItem] Llamando a onRefresh() con catalogoId:', item.id);
+        await onRefresh(item.id);
+        console.log('🔵 [CatalogoTreeItem] onRefresh() completado');
+      } else {
+        console.warn('⚠️ [CatalogoTreeItem] onRefresh NO está definido!');
+      }
+      
+      // Pequeño delay para asegurar que la UI se actualice
+      console.log('🔵 [CatalogoTreeItem] Esperando 100ms para UI...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('🔵 [CatalogoTreeItem] Cerrando modal...');
       handleCloseModal();
     } catch (error) {
-      console.error('Error al guardar documento:', error);
+      console.error('❌ [CatalogoTreeItem] Error al guardar documento:', error);
       throw error;
     }
   };
@@ -213,6 +236,7 @@ export function CatalogoTreeItem({
               onSelect={onSelect}
               selectedId={selectedId}
               showDocumentos={showDocumentos}
+              onRefresh={onRefresh}
             />
           ))}
         </div>

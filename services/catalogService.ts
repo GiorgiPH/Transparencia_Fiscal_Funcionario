@@ -114,7 +114,7 @@ const mockCatalogChildren: Record<number, Catalogo[]> = {
           nombre: "CSV",
           disponible: true,
           extension: "csv",
-          documentoId: "1",
+          documentoId: 1,
           documentoNombre: "Datos demográficos 2025"
         },
         {
@@ -186,7 +186,7 @@ const mockCatalogChildren: Record<number, Catalogo[]> = {
           nombre: "CSV",
           disponible: true,
           extension: "csv",
-          documentoId: "2",
+          documentoId: 2,
           documentoNombre: "Objetivos generales 2025-2030"
         },
         {
@@ -194,7 +194,7 @@ const mockCatalogChildren: Record<number, Catalogo[]> = {
           nombre: "Excel",
           disponible: true,
           extension: "xlsx",
-          documentoId: "3",
+          documentoId: 3,
           documentoNombre: "Metas por año"
         }
       ]

@@ -142,6 +142,21 @@ export function useCatalogs() {
     updateTreeItem(catalogId, { isExpanded: false })
   }
 
+  const refreshCatalogo = async (catalogId: number): Promise<void> => {
+    try {
+      // Obtener el catálogo actualizado con disponibilidadTiposDocumento
+      const catalogoActualizado = await catalogService.getCatalogChildren(catalogId)
+      // Nota: getCatalogChildren devuelve un array, necesitamos encontrar el catálogo específico
+      // Para simplificar, recargaremos todos los hijos del padre
+      // En una implementación más avanzada, podríamos tener un endpoint para un catálogo específico
+      
+      // Por ahora, recargamos todo el árbol
+      await fetchCatalogoTree()
+    } catch (err) {
+      console.error("Error al refrescar catálogo:", err)
+    }
+  }
+
   const updateTreeItem = (catalogId: number, updates: Partial<CatalogoTreeItem>) => {
     setCatalogosTree(prev => updateTreeItemRecursive(prev, catalogId, updates))
   }
@@ -290,6 +305,7 @@ export function useCatalogs() {
     fetchCatalogoTree,
     expandCatalogo,
     collapseCatalogo,
+    refreshCatalogo,
     mockFetchCatalogosRaices,
     clearError,
     

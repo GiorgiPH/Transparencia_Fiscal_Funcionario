@@ -24,6 +24,7 @@ export function CatalogoTreeContainer({
     fetchCatalogoTree,
     expandCatalogo,
     collapseCatalogo,
+    refreshCatalogo,
     mockFetchCatalogosRaices,
     clearError,
   } = useCatalogs();
@@ -67,6 +68,20 @@ export function CatalogoTreeContainer({
   const handleRefresh = () => {
     clearError();
     loadCatalogos();
+  };
+
+  const handleRefreshCatalogo = async (catalogoId: number) => {
+    console.log("🟢 [CatalogoTreeContainer] handleRefreshCatalogo llamado con catalogoId:", catalogoId);
+    console.log("🟢 [CatalogoTreeContainer] refreshCatalogo existe?:", !!refreshCatalogo);
+    
+    try {
+      // Usar el nuevo método refreshCatalogo que está diseñado para refrescar un catálogo específico
+      console.log("🟢 [CatalogoTreeContainer] Llamando a refreshCatalogo...");
+      await refreshCatalogo(catalogoId);
+      console.log("🟢 [CatalogoTreeContainer] refreshCatalogo completado exitosamente");
+    } catch (error) {
+      console.error("🔴 [CatalogoTreeContainer] Error en handleRefreshCatalogo:", error);
+    }
   };
 
   const handleToggleMockData = () => {
@@ -252,17 +267,21 @@ export function CatalogoTreeContainer({
             </div>
           ) : (
             <div className="space-y-1">
-              {filteredCatalogos.map((item) => (
-                <CatalogoTreeItem
-                  key={item.id}
-                  item={item}
-                  onExpand={handleExpand}
-                  onCollapse={handleCollapse}
-                  onSelect={handleSelect}
-                  selectedId={selectedId}
-                  showDocumentos={showDocumentos}
-                />
-              ))}
+              {filteredCatalogos.map((item) => {
+                console.log(`🟢 [CatalogoTreeContainer] Renderizando CatalogoTreeItem para item ${item.id} "${item.nombre}"`);
+                return (
+                  <CatalogoTreeItem
+                    key={item.id}
+                    item={item}
+                    onExpand={handleExpand}
+                    onCollapse={handleCollapse}
+                    onSelect={handleSelect}
+                    selectedId={selectedId}
+                    showDocumentos={showDocumentos}
+                    onRefresh={() => handleRefreshCatalogo(item.id)}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

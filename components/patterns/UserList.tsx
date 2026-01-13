@@ -97,10 +97,13 @@ export function UserList({
               Email
             </th>
             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              Rol
+              Roles
             </th>
             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
               Área
+            </th>
+            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+              Estado
             </th>
             <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
               <span className="sr-only">Acciones</span>
@@ -135,17 +138,44 @@ export function UserList({
               </td>
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{user.email}</td>
               <td className="whitespace-nowrap px-3 py-4 text-sm">
-                <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                  user.rol === 'Admin' 
-                    ? 'bg-purple-100 text-purple-800' 
-                    : user.rol === 'Upload'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {user.rol}
-                </span>
+                <div className="flex flex-wrap gap-1">
+                  {user.roles && user.roles.length > 0 ? (
+                    user.roles.map((role, index) => (
+                      <span
+                        key={index}
+                        className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                          role === 'ADMIN' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : role === 'CARGA'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-green-100 text-green-800'
+                        }`}
+                      >
+                        {role}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-gray-100 text-gray-800">
+                      {user.rol}
+                    </span>
+                  )}
+                </div>
               </td>
               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{user.area || 'No especificada'}</td>
+              <td className="whitespace-nowrap px-3 py-4 text-sm">
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  user.activo !== false // Si es undefined o true, mostrar como activo
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  <span className={`h-1.5 w-1.5 rounded-full mr-1 ${
+                    user.activo !== false
+                      ? 'bg-green-500'
+                      : 'bg-red-500'
+                  }`}></span>
+                  {user.activo !== false ? 'Activo' : 'Inactivo'}
+                </span>
+              </td>
               <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                 <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
                   {onEditUser && (

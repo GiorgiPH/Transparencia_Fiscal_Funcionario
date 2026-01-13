@@ -1,40 +1,51 @@
 "use client"
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { UserList } from './UserList';
+import { UserFormModal } from '@/components/features/admin/UserFormModal';
 import { useUsers } from '@/hooks/useUsers';
-import type { User } from '@/types/auth';
+import type { User, CreateUserData, UpdateUserData } from '@/types/auth';
+import { Button } from '../ui/button';
+import { Plus } from 'lucide-react';
 
 interface UserListContainerProps {
   onUserSelect?: (user: User) => void;
-  onEditUser?: (user: User) => void;
-  onDeleteUser?: (user: User) => void;
   autoLoad?: boolean;
 }
 
 export function UserListContainer({
   onUserSelect,
-  onEditUser,
-  onDeleteUser,
   autoLoad = true,
 }: UserListContainerProps) {
   const {
     users,
+    roles,
     isLoading,
     error,
     fetchUsers,
+    fetchRoles,
+    createUser,
+    updateUser,
+    deleteUser,
+    fetchAdminUserById,
     clearError,
   } = useUsers();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     if (autoLoad) {
       fetchUsers();
+      fetchRoles();
     }
-  }, [autoLoad, fetchUsers]);
+  }, [autoLoad, fetchUsers, fetchRoles]);
 
   const handleRefresh = () => {
     clearError();
     fetchUsers();
+    fetchRoles();
   };
 
   const handleUserClick = (user: User) => {
@@ -42,13 +53,44 @@ export function UserListContainer({
   };
 
   const handleEditUser = (user: User) => {
-    onEditUser?.(user);
+    setSelectedUser(user);
+    setIsCreating(false);
+    setIsModalOpen(true);
   };
 
-  const handleDeleteUser = (user: User) => {
+  const handleDeleteUser = async (user: User) => {
     if (window.confirm(`¿Estás seguro de que deseas eliminar a ${user.nombre}?`)) {
-      onDeleteUser?.(user);
+      try {
+        await deleteUser(parseInt(user.id));
+      } catch (err) {
+        console.error('Error al eliminar usuario:', err);
+      }
     }
+  };
+
+  const handleCreateUser = () => {
+    setSelectedUser(null);
+    setIsCreating(true);
+    setIsModalOpen(true);
+  };
+
+  const handleModalSubmit = async (data: CreateUserData | UpdateUserData, file?: File) => {
+    try {
+      if (isCreating) {
+        await createUser(data as CreateUserData, file);
+      } else if (selectedUser) {
+        await updateUser(parseInt(selectedUser.id), data as UpdateUserData, file);
+      }
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Error al guardar usuario:', err);
+      throw err;
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
   };
 
   return (
@@ -61,6 +103,18 @@ export function UserListContainer({
           </p>
         </div>
         <div className="flex space-x-2">
+
+        <Button
+  type="button"
+  onClick={handleCreateUser}
+  variant="default"
+  size="sm"
+  className="gap-2 whitespace-nowrap"
+>
+  <Plus className="h-4 w-4" />
+  Nuevo usuario
+</Button>
+
           <button
             onClick={handleRefresh}
             disabled={isLoading}
@@ -80,8 +134,16 @@ export function UserListContainer({
         error={error}
         onUserClick={onUserSelect ? handleUserClick : undefined}
         onRefresh={handleRefresh}
-        onEditUser={onEditUser ? handleEditUser : undefined}
-        onDeleteUser={onDeleteUser ? handleDeleteUser : undefined}
+        onEditUser={handleEditUser}
+        onDeleteUser={handleDeleteUser}
+      />
+
+      <UserFormModal
+        open={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleModalSubmit}
+        user={selectedUser}
+        roles={roles}
       />
 
       <div className="text-xs text-gray-500">

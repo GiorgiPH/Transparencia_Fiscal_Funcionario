@@ -3,9 +3,11 @@ import { persist } from 'zustand/middleware';
 import type { User, AuthTokens, AuthState } from '@/types/auth';
 
 interface AuthStore extends AuthState {
+  isInitialized: boolean; // NUEVO ESTADO
   setUser: (user: User | null) => void;
   setTokens: (tokens: AuthTokens | null) => void;
   setLoading: (isLoading: boolean) => void;
+  setInitialized: (isInitialized: boolean) => void; // NUEVA ACCIÓN
   login: (user: User, tokens: AuthTokens) => void;
   logout: () => void;
   getAccessToken: () => string | null;
@@ -19,7 +21,8 @@ export const authStore = create<AuthStore>()(
       user: null,
       tokens: null,
       isAuthenticated: false,
-      isLoading: false,
+      isLoading: false, // ← CAMBIO: iniciar en false
+      isInitialized: false, // ← NUEVO: iniciar en false
 
       setUser: (user) => set({ user, isAuthenticated: !!user }),
 
@@ -27,34 +30,49 @@ export const authStore = create<AuthStore>()(
 
       setLoading: (isLoading) => set({ isLoading }),
 
-      login: (user, tokens) => 
+      setInitialized: (isInitialized) => set({ isInitialized }),
+
+      login: (user, tokens) => {
+        // Guardar tokens en localStorage también
+        tokenHelper.saveTokens(tokens);
+        
         set({ 
           user, 
           tokens, 
           isAuthenticated: true,
-          isLoading: false 
-        }),
+          isLoading: false,
+          isInitialized: true // ← NUEVO: marcar como inicializado
+        });
+      },
 
-      logout: () => 
+      logout: () => {
+        // Limpiar tokens de localStorage
+        tokenHelper.clearTokens();
+        
         set({ 
           user: null, 
           tokens: null, 
           isAuthenticated: false,
-          isLoading: false 
-        }),
+          isLoading: false,
+          isInitialized: true // ← NUEVO: mantener inicializado
+        });
+      },
 
       getAccessToken: () => get().tokens?.accessToken || null,
 
       getRefreshToken: () => get().tokens?.refreshToken || null,
 
       isTokenExpired: () => {
-        const tokens = get().tokens;
-        if (!tokens) return true;
+        if (typeof window === 'undefined') return true;
         
-        // Check if token is expired (simplified - in real app, decode JWT)
-        // For now, we'll assume tokens expire after expiresIn seconds
-        // This is a placeholder implementation
-        return false;
+        const expiryTimestamp = localStorage.getItem('token_expiry');
+        if (!expiryTimestamp) return true;
+        
+        const expiryDate = parseInt(expiryTimestamp, 10);
+        const now = Date.now();
+        
+        // Token expirado si la fecha actual es mayor a la de expiración
+        return now >= expiryDate;
       },
     }),
     {
@@ -63,6 +81,7 @@ export const authStore = create<AuthStore>()(
         user: state.user,
         tokens: state.tokens,
         isAuthenticated: state.isAuthenticated,
+        // NO persistir isLoading ni isInitialized
       }),
     }
   )
@@ -100,5 +119,17 @@ export const tokenHelper = {
       return localStorage.getItem('refresh_token');
     }
     return null;
+  },
+
+  isTokenExpired: () => {
+    if (typeof window === 'undefined') return true;
+    
+    const expiryTimestamp = localStorage.getItem('token_expiry');
+    if (!expiryTimestamp) return true;
+    
+    const expiryDate = parseInt(expiryTimestamp, 10);
+    const now = Date.now();
+    
+    return now >= expiryDate;
   },
 };

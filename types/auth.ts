@@ -16,11 +16,65 @@ export interface User {
   rol: "Admin" | "Upload" | "Edit"
   fotoPerfil?: string
   area?: string
+  activo?: boolean
+  telefono?: string
+  requiere_2fa?: boolean
+  institucion_id?: string
   createdAt: string
   updatedAt: string
   // Campos adicionales para compatibilidad con API
   roles?: string[]
   permissions?: string[]
+}
+
+// Tipos para la API de administración de usuarios
+export interface ApiAdminUser {
+  id: number
+  email: string
+  name: string
+  foto_perfil: string | null
+  area_departamento: string | null
+  telefono: string | null
+  requiere_2fa: boolean
+  activo: boolean
+  ultimo_acceso: string | null
+  fecha_creacion: string
+  fecha_modificacion: string
+  fecha_ultimo_cambio_pass: string | null
+  usuario_creacion_id: number | null
+  usuario_modif_id: number | null
+  institucion_id: string | null
+  roles?: ApiRole[] // Se agregará cuando el endpoint regrese roles
+}
+
+export interface ApiRole {
+  id: number
+  nombre: string
+  descripcion: string
+  activo: boolean
+  fecha_creacion: string
+  fecha_modificacion: string
+}
+
+export interface CreateUserData {
+  name: string
+  email: string
+  password: string
+  institucion_id?: string
+  telefono?: string
+  roleIds: number[]
+  requiere_2fa?: boolean
+  activo?: boolean
+}
+
+export interface UpdateUserData {
+  name?: string
+  email?: string
+  institucion_id?: string
+  telefono?: string
+  roleIds?: number[]
+  requiere_2fa?: boolean
+  activo?: boolean
 }
 
 export interface AuthTokens {

@@ -10,8 +10,10 @@
   --card-foreground: oklch(0.25 0.02 140);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.25 0.02 140);
-  --primary: oklch(0.28 0.03 130); /* #2E3B2B dark green */
-  --primary-foreground: oklch(0.98 0 0);
+
+
+  --primary: oklch(0.335 0.03 139);/* #2E3B2B dark green */
+  --primary-foreground: oklch(0.98 0.005 90);
   --secondary: oklch(0.48 0.08 40); /* #7C4A36 brown */
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.55 0.04 110); /* #71785b sage green */

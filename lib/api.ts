@@ -22,13 +22,16 @@ class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const headers: HeadersInit = {
+    const headersInit: HeadersInit = {
       "Content-Type": "application/json",
       ...options.headers,
     }
 
+    // Convertir a Headers para poder agregar Authorization
+    const headers = new Headers(headersInit)
+    
     if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`
+      headers.set("Authorization", `Bearer ${this.token}`)
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {

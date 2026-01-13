@@ -50,8 +50,6 @@ export default function PatronesEjemploPage() {
 
             <UserListContainer
               onUserSelect={handleUserSelect}
-              onEditUser={handleEditUser}
-              onDeleteUser={handleDeleteUser}
             />
           </div>
         </div>

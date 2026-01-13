@@ -12,14 +12,14 @@ export default function LoginPage() {
             <Shield className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-balance text-3xl font-bold tracking-tight text-primary">{APP_NAME}</h1>
-          <p className="mt-2 text-sm font-medium text-accent">{APP_SUBTITLE}</p>
+          {/* <p className="mt-2 text-sm font-medium text-accent">{APP_SUBTITLE}</p> */}
           <p className="mt-4 text-pretty text-sm text-muted-foreground">Sistema de Gestión de Transparencia Fiscal</p>
         </div>
 
         {/* Login Card */}
         <div className="rounded-lg border bg-card p-8 shadow-lg">
           <div className="mb-6">
-            <h2 className="text-center text-xl font-semibold text-card-foreground">Acceso al Sistema</h2>
+            <h2 className="text-center text-xl font-semibold text-card-foreground">Iniciar Sesión</h2>
             <p className="mt-2 text-center text-sm text-muted-foreground">Ingrese sus credenciales institucionales</p>
           </div>
 

@@ -10,9 +10,19 @@ import { useAuth } from "@/hooks/useAuth"
 
 export default function CatalogosPage() {
   const { user } = useAuth()
-  const { rootCatalogs, isLoading } = useCatalogs()
+  const { rootCatalogs, isLoading, refreshCatalogo } = useCatalogs()
 
   const canUpload = user?.rol === "Admin" || user?.rol === "Upload"
+
+  const handleRefreshCatalogo = async (catalogoId: number) => {
+    console.log("🟢 [CatalogosPage] handleRefreshCatalogo llamado con catalogoId:", catalogoId);
+    try {
+      await refreshCatalogo(catalogoId);
+      console.log("🟢 [CatalogosPage] refreshCatalogo completado exitosamente");
+    } catch (error) {
+      console.error("🔴 [CatalogosPage] Error en handleRefreshCatalogo:", error);
+    }
+  };
 
   if (isLoading) {
     return <Loading message="Cargando categorías..." />
@@ -38,7 +48,13 @@ export default function CatalogosPage() {
         {/* Categories Accordion */}
         <div className="space-y-4">
           {rootCatalogs.map((category, index) => (
-            <CategoryAccordion key={category.id} category={category} index={index + 1} canUpload={canUpload} />
+            <CategoryAccordion 
+              key={category.id} 
+              category={category} 
+              index={index + 1} 
+              canUpload={canUpload}
+              onRefresh={handleRefreshCatalogo}
+            />
           ))}
         </div>
       </div>

@@ -29,8 +29,8 @@ export function ProfileForm({ user, onUpdate }: ProfileFormProps) {
     if (!file) return
 
     try {
-      const url = await uploadPhoto(file)
-      setFotoPerfil(url)
+      const result = await uploadPhoto(file)
+      setFotoPerfil(result.url)
     } catch (error) {
       console.error("Error uploading photo:", error)
     }

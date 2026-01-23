@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { catalogService } from "@/services/catalogService"
+import { catalogService, type CreateCatalogoData, type UpdateCatalogoData } from "@/services/catalogService"
 import type { Catalogo, Documento, TipoDocumento, CatalogoTreeItem } from "@/types/catalog"
+import { useToast } from "@/hooks/use-toast"
 
 export function useCatalogs() {
   const [rootCatalogs, setRootCatalogs] = useState<Catalogo[]>([])
@@ -10,6 +11,7 @@ export function useCatalogs() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [documentTypes, setDocumentTypes] = useState<TipoDocumento[]>([])
+  const { toast } = useToast()
 
   useEffect(() => {
     loadRootCatalogs()
@@ -56,6 +58,76 @@ export function useCatalogs() {
       setError("Error al cargar documento")
       console.error(err)
       return null
+    }
+  }
+
+  // Métodos CRUD para catálogos
+  const getCatalog = async (catalogId: number): Promise<Catalogo | null> => {
+    try {
+      return await catalogService.getCatalogById(catalogId)
+    } catch (err) {
+      console.error("Error al cargar catálogo:", err)
+      return null
+    }
+  }
+
+  const createCatalog = async (data: CreateCatalogoData): Promise<Catalogo | null> => {
+    try {
+      const result = await catalogService.createCatalog(data)
+      toast({
+        title: "Catálogo creado",
+        description: "El catálogo se ha creado exitosamente.",
+      })
+      return result
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Error al crear catálogo"
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+      console.error("Error al crear catálogo:", err)
+      return null
+    }
+  }
+
+  const updateCatalog = async (catalogId: number, data: UpdateCatalogoData): Promise<Catalogo | null> => {
+    try {
+      const result = await catalogService.updateCatalog(catalogId, data)
+      toast({
+        title: "Catálogo actualizado",
+        description: "El catálogo se ha actualizado exitosamente.",
+      })
+      return result
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Error al actualizar catálogo"
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+      console.error("Error al actualizar catálogo:", err)
+      return null
+    }
+  }
+
+  const deleteCatalog = async (catalogId: number): Promise<boolean> => {
+    try {
+      await catalogService.deleteCatalog(catalogId)
+      toast({
+        title: "Catálogo eliminado",
+        description: "El catálogo se ha eliminado exitosamente.",
+      })
+      return true
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Error al eliminar catálogo"
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
+      console.error("Error al eliminar catálogo:", err)
+      return false
     }
   }
 
@@ -154,6 +226,50 @@ export function useCatalogs() {
       await fetchCatalogoTree()
     } catch (err) {
       console.error("Error al refrescar catálogo:", err)
+    }
+  }
+
+  // Nuevos métodos para refresco específico
+  const refreshCatalogoEspecifico = async (catalogId: number): Promise<any> => {
+    try {
+      // Usar el nuevo endpoint que obtiene el catálogo con todos sus hijos
+      const catalogoActualizado = await catalogService.getCatalogWithChildren(catalogId)
+      
+      // Actualizar el árbol con la nueva estructura
+      updateTreeItem(catalogId, {
+        ...catalogoActualizado,
+        children: catalogoActualizado.children?.map(child => ({
+          ...child,
+          children: child.children || [],
+          isExpanded: false,
+          isLoading: false,
+          hasChildren: (child._count?.children || 0) > 0
+        })) || [],
+        isExpanded: true,
+        isLoading: false
+      })
+      
+      return catalogoActualizado
+    } catch (err) {
+      console.error("Error al refrescar catálogo específico:", err)
+      throw err
+    }
+  }
+
+  const refreshDisponibilidadDocumentos = async (catalogId: number): Promise<any> => {
+    try {
+      // Usar el nuevo endpoint que obtiene solo la disponibilidad de documentos
+      const disponibilidad = await catalogService.getDocumentAvailability(catalogId)
+      
+      // Actualizar solo la disponibilidad del catálogo
+      updateTreeItem(catalogId, {
+        disponibilidadTiposDocumento: disponibilidad.disponibilidadTiposDocumento
+      })
+      
+      return disponibilidad
+    } catch (err) {
+      console.error("Error al refrescar disponibilidad de documentos:", err)
+      throw err
     }
   }
 
@@ -308,6 +424,16 @@ export function useCatalogs() {
     refreshCatalogo,
     mockFetchCatalogosRaices,
     clearError,
+    
+    // Métodos CRUD para catálogos
+    getCatalog,
+    createCatalog,
+    updateCatalog,
+    deleteCatalog,
+    
+    // Nuevos métodos para refresco específico
+    refreshCatalogoEspecifico,
+    refreshDisponibilidadDocumentos,
     
     // Alias para compatibilidad
     fetchTiposDocumento,

@@ -12,9 +12,10 @@ interface CategoryAccordionProps {
   index: number
   canUpload: boolean
   onRefresh?: (catalogoId: number) => Promise<void>
+  isEditMode?: boolean
 }
 
-export function CategoryAccordion({ category, index, canUpload, onRefresh }: CategoryAccordionProps) {
+export function CategoryAccordion({ category, index, canUpload, onRefresh, isEditMode = false }: CategoryAccordionProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [treeItems, setTreeItems] = useState<CatalogoTreeItemType[]>([])
   const [isLoadingChildren, setIsLoadingChildren] = useState(false)
@@ -218,15 +219,18 @@ export function CategoryAccordion({ category, index, canUpload, onRefresh }: Cat
             <div className="space-y-3">
               {treeItems.map((item) => (
                 <div key={item.id} className="pl-4 border-l-2 border-muted">
-                  <CatalogoTreeItem
-                    item={item}
-                    level={0}
-                    showDocumentos={item.permite_documentos}
-                    onExpand={handleExpand}
-                    onCollapse={handleCollapse}
-                    onSelect={() => {}}
-                    onRefresh={onRefresh}
-                  />
+                    <CatalogoTreeItem
+                      item={item}
+                      level={0}
+                      showDocumentos={isEditMode ? false : item.permite_documentos} // Deshabilitar documentos en modo edición
+                      onExpand={handleExpand}
+                      onCollapse={handleCollapse}
+                      onSelect={() => {}}
+                      onRefresh={onRefresh}
+                      onRefreshCatalogo={onRefresh} // Usar el mismo callback para compatibilidad
+                      onRefreshDocumentos={onRefresh} // Usar el mismo callback para compatibilidad
+                      isEditMode={isEditMode}
+                    />
                 </div>
               ))}
             </div>

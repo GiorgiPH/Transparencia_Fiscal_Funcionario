@@ -255,6 +255,39 @@ async function withMockFallback<T>(apiCall: () => Promise<T>, mockData: T): Prom
   }
 }
 
+// Tipos para creación/actualización de catálogos
+export interface CreateCatalogoData {
+  nombre: string
+  descripcion?: string
+  parent_id?: number | null
+  orden?: number
+  permite_documentos?: boolean
+  activo?: boolean
+}
+
+export interface UpdateCatalogoData {
+  nombre?: string
+  descripcion?: string
+  parent_id?: number | null
+  orden?: number
+  permite_documentos?: boolean
+  activo?: boolean
+}
+
+// Tipo para catálogo con hijos anidados
+export interface CatalogoWithChildren extends Catalogo {
+  children?: CatalogoWithChildren[]
+  disponibilidadTiposDocumento?: any[]
+}
+
+// Tipo para disponibilidad de documentos
+export interface DocumentAvailabilityResponse {
+  id: number
+  nombre: string
+  permite_documentos: boolean
+  disponibilidadTiposDocumento: any[]
+}
+
 export const catalogService = {
   // Obtener catálogos raíz
   async getRootCatalogs(): Promise<Catalogo[]> {
@@ -270,6 +303,62 @@ export const catalogService = {
       () => apiClient.get<Catalogo[]>(`/admin/catalogos/${catalogId}/hijos`),
       mockCatalogChildren[catalogId] || []
     )
+  },
+
+  // Obtener catálogo por ID
+  async getCatalogById(catalogId: number): Promise<Catalogo> {
+    return apiClient.get<Catalogo>(`/admin/catalogos/${catalogId}`)
+  },
+
+  // Obtener catálogo con todos sus hijos anidados
+  async getCatalogWithChildren(catalogId: number): Promise<CatalogoWithChildren> {
+    return withMockFallback(
+      () => apiClient.get<CatalogoWithChildren>(`/admin/catalogos/${catalogId}/with-children`),
+      // Mock data para desarrollo
+      {
+        ...mockRootCatalogs[0],
+        children: mockCatalogChildren[1] || [],
+        disponibilidadTiposDocumento: mockCatalogChildren[1]?.[0]?.disponibilidadTiposDocumento || []
+      }
+    )
+  },
+
+  // Obtener disponibilidad de documentos de un catálogo
+  async getDocumentAvailability(catalogId: number): Promise<DocumentAvailabilityResponse> {
+    return withMockFallback(
+      () => apiClient.get<DocumentAvailabilityResponse>(`/admin/catalogos/${catalogId}/document-availability`),
+      // Mock data para desarrollo
+      {
+        id: catalogId,
+        nombre: "Catálogo Mock",
+        permite_documentos: true,
+        disponibilidadTiposDocumento: mockDocumentTypes.map(tipo => ({
+          tipoDocumentoId: tipo.id,
+          nombre: tipo.nombre,
+          disponible: Math.random() > 0.5,
+          extension: tipo.extension,
+          ...(Math.random() > 0.5 ? {
+            documentoId: Math.floor(Math.random() * 1000),
+            documentoNombre: `Documento ${tipo.nombre}`
+          } : {})
+        }))
+      }
+    )
+  },
+
+  // Crear catálogo
+  async createCatalog(data: CreateCatalogoData): Promise<Catalogo> {
+    return apiClient.post<Catalogo>("/admin/catalogos", data)
+  },
+
+  // Actualizar catálogo
+  async updateCatalog(catalogId: number, data: UpdateCatalogoData): Promise<Catalogo> {
+    return apiClient.patch<Catalogo>(`/admin/catalogos/${catalogId}`, data)
+  },
+
+  // Eliminar catálogo (desactivar)
+  async deleteCatalog(catalogId: number): Promise<void> {
+    return apiClient.delete(`/admin/catalogos/${catalogId}`)
   },
 
   // Obtener documento por ID

@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import type { CatalogoTreeItem as CatalogoTreeItemType, DocumentoCreateData, DocumentoUpdateData } from '@/types/catalog';
-import { ChevronRight, ChevronDown, Folder, FileText, AlertCircle, Download, Upload, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder, FileText, AlertCircle, Download, Upload, Trash2, Plus, Edit, Trash, CheckCircle2 } from 'lucide-react';
 import { DocumentoModal } from './DocumentoModal';
+import { CatalogoFormModal } from './CatalogoFormModal';
 import { useCatalogs } from '@/hooks/useCatalogs';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import loading from '@/app/dashboard/catalogos/loading';
 
 interface CatalogoTreeItemProps {
   item: CatalogoTreeItemType;
@@ -13,9 +18,15 @@ interface CatalogoTreeItemProps {
   selectedId?: number | null;
   showDocumentos?: boolean;
   onRefresh?: (catalogoId: number) => Promise<void>; // CAMBIADO: ahora recibe el catalogoId
+  onRefreshCatalogo?: (catalogoId: number) => Promise<any>; // Nuevo: refresco específico de catálogo
+  onRefreshDocumentos?: (catalogoId: number) => Promise<any>; // Nuevo: refresco específico de documentos
+  isEditMode?: boolean;
+  onCatalogoCreate?: (parentCatalogo: CatalogoTreeItemType) => void;
+  onCatalogoEdit?: (catalogo: CatalogoTreeItemType) => void;
+  onCatalogoDelete?: (catalogo: CatalogoTreeItemType) => Promise<boolean>;
 }
 
-export function CatalogoTreeItem({
+export function  CatalogoTreeItem({
   item,
   level = 0,
   onExpand,
@@ -24,16 +35,23 @@ export function CatalogoTreeItem({
   selectedId,
   showDocumentos = false,
   onRefresh,
+  onRefreshCatalogo,
+  onRefreshDocumentos,
+  isEditMode = false,
+  onCatalogoCreate,
+  onCatalogoEdit,
+  onCatalogoDelete,
 }: CatalogoTreeItemProps) {
   console.log(`🔵 [CatalogoTreeItem] Renderizando item ${item.id} "${item.nombre}", onRefresh existe?:`, !!onRefresh);
   
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDocumentoModalOpen, setIsDocumentoModalOpen] = useState(false);
+  const [isCatalogoModalOpen, setIsCatalogoModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedTipoDocumentoId, setSelectedTipoDocumentoId] = useState<number | null>(null);
   const [selectedDocumentoId, setSelectedDocumentoId] = useState<number | null>(null);
 
   
-  const { createDocument, updateDocument, deleteDocument } = useCatalogs();
+  const { createDocument, updateDocument, deleteDocument, createCatalog, updateCatalog, deleteCatalog, refreshCatalogoEspecifico, refreshDisponibilidadDocumentos } = useCatalogs();
   
   const hasChildren = (item.children && item.children.length > 0) || 
                      (item._count?.children && item._count.children > 0) ||
@@ -109,22 +127,31 @@ export function CatalogoTreeItem({
     window.open(downloadUrl, '_blank');
   };
 
-  const handleOpenModal = (mode: 'create' | 'edit', tipoDocumentoId?: number, documentoId?: number) => {
+  const handleOpenDocumentoModal = (mode: 'create' | 'edit', tipoDocumentoId?: number, documentoId?: number) => {
     setModalMode(mode);
     setSelectedTipoDocumentoId(tipoDocumentoId || null);
     setSelectedDocumentoId(documentoId || null);
 
-    setIsModalOpen(true);
+    setIsDocumentoModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleCloseDocumentoModal = () => {
+    setIsDocumentoModalOpen(false);
     setSelectedTipoDocumentoId(null);
   };
 
-  const handleSubmitModal = async (data: DocumentoCreateData | DocumentoUpdateData) => {
-    console.log('🔵 [CatalogoTreeItem] handleSubmitModal llamado, modalMode:', modalMode);
-    console.log('🔵 [CatalogoTreeItem] onRefresh existe?:', !!onRefresh);
+  const handleOpenCatalogoModal = (mode: 'create' | 'edit') => {
+    setModalMode(mode);
+    setIsCatalogoModalOpen(true);
+  };
+
+  const handleCloseCatalogoModal = () => {
+    setIsCatalogoModalOpen(false);
+  };
+
+  const handleSubmitDocumentoModal = async (data: DocumentoCreateData | DocumentoUpdateData) => {
+    console.log('🔵 [CatalogoTreeItem] handleSubmitDocumentoModal llamado, modalMode:', modalMode);
+    console.log('🔵 [CatalogoTreeItem] onRefreshDocumentos existe?:', !!onRefreshDocumentos);
     
     try {
       if (modalMode === 'create') {
@@ -137,13 +164,18 @@ export function CatalogoTreeItem({
       
       console.log('🔵 [CatalogoTreeItem] Documento guardado exitosamente');
       
-      // Refrescar los datos del catálogo después de crear/actualizar
-      if (onRefresh) {
+      // Refrescar solo la disponibilidad de documentos usando el nuevo endpoint específico
+      if (onRefreshDocumentos) {
+        console.log('🔵 [CatalogoTreeItem] Llamando a onRefreshDocumentos() con catalogoId:', item.id);
+        await onRefreshDocumentos(item.id);
+        console.log('🔵 [CatalogoTreeItem] onRefreshDocumentos() completado');
+      } else if (onRefresh) {
+        // Fallback al método antiguo si no hay onRefreshDocumentos
         console.log('🔵 [CatalogoTreeItem] Llamando a onRefresh() con catalogoId:', item.id);
         await onRefresh(item.id);
         console.log('🔵 [CatalogoTreeItem] onRefresh() completado');
       } else {
-        console.warn('⚠️ [CatalogoTreeItem] onRefresh NO está definido!');
+        console.warn('⚠️ [CatalogoTreeItem] No hay método de refresco disponible!');
       }
       
       // Pequeño delay para asegurar que la UI se actualice
@@ -151,14 +183,104 @@ export function CatalogoTreeItem({
       await new Promise(resolve => setTimeout(resolve, 100));
       
       console.log('🔵 [CatalogoTreeItem] Cerrando modal...');
-      handleCloseModal();
+      handleCloseDocumentoModal();
     } catch (error) {
       console.error('❌ [CatalogoTreeItem] Error al guardar documento:', error);
       throw error;
     }
   };
 
-  const handleDelete = async (tipoDocumentoId: number, documentoId?: number) => {
+  const handleSubmitCatalogoModal = async (data: any) => {
+    console.log('🔵 [CatalogoTreeItem] handleSubmitCatalogoModal llamado, modalMode:', modalMode);
+    
+    try {
+      if (modalMode === 'create') {
+        console.log('🔵 [CatalogoTreeItem] Creando catálogo...');
+        await createCatalog(data);
+        if (onCatalogoCreate) {
+          onCatalogoCreate(item);
+        }
+      } else {
+        console.log('🔵 [CatalogoTreeItem] Actualizando catálogo ID:', item.id);
+        await updateCatalog(item.id, data);
+        if (onCatalogoEdit) {
+          onCatalogoEdit(item);
+        }
+      }
+      
+      console.log('🔵 [CatalogoTreeItem] Catálogo guardado exitosamente');
+      
+      // Refrescar el catálogo específico usando el nuevo endpoint
+      if (onRefreshCatalogo) {
+        console.log('🔵 [CatalogoTreeItem] Llamando a onRefreshCatalogo() con catalogoId:', item.id);
+        await onRefreshCatalogo(item.id);
+        console.log('🔵 [CatalogoTreeItem] onRefreshCatalogo() completado');
+      } else if (onRefresh) {
+        // Fallback al método antiguo si no hay onRefreshCatalogo
+        console.log('🔵 [CatalogoTreeItem] Llamando a onRefresh() con catalogoId:', item.id);
+        await onRefresh(item.id);
+        console.log('🔵 [CatalogoTreeItem] onRefresh() completado');
+      } else {
+        console.warn('⚠️ [CatalogoTreeItem] No hay método de refresco disponible!');
+      }
+      
+      // Pequeño delay para asegurar que la UI se actualice
+      console.log('🔵 [CatalogoTreeItem] Esperando 100ms para UI...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('🔵 [CatalogoTreeItem] Cerrando modal...');
+      handleCloseCatalogoModal();
+    } catch (error) {
+      console.error('❌ [CatalogoTreeItem] Error al guardar catálogo:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteCatalogo = async () => {
+    // Validar si el catálogo tiene documentos
+    if (item._count?.documentos && item._count.documentos > 0) {
+      const confirmDelete = window.confirm(
+        `⚠️ ADVERTENCIA: Este catálogo tiene ${item._count.documentos} documento(s).\n\n` +
+        `¿Está seguro de que desea eliminar el catálogo "${item.nombre}"?\n` +
+        `Esta acción eliminará también todos los documentos asociados y no se puede deshacer.`
+      );
+      if (!confirmDelete) return;
+    } else {
+      const confirmDelete = window.confirm(
+        `¿Está seguro de que desea eliminar el catálogo "${item.nombre}"?\n` +
+        `Esta acción no se puede deshacer.`
+      );
+      if (!confirmDelete) return;
+    }
+    
+    console.log('🔴 [CatalogoTreeItem] Eliminando catálogo ID:', item.id);
+    
+    try {
+      const success = await deleteCatalog(item.id);
+      if (success && onCatalogoDelete) {
+        await onCatalogoDelete(item);
+      }
+      
+      // Refrescar el catálogo padre después de eliminar
+      const parentId = item.parent_id || item.id;
+      if (onRefreshCatalogo && parentId !== item.id) {
+        console.log('🔴 [CatalogoTreeItem] Llamando a onRefreshCatalogo() con catalogoId:', parentId);
+        await onRefreshCatalogo(parentId);
+        console.log('🔴 [CatalogoTreeItem] onRefreshCatalogo() completado');
+      } else if (onRefresh) {
+        console.log('🔴 [CatalogoTreeItem] Llamando a onRefresh() con catalogoId:', parentId);
+        await onRefresh(parentId);
+        console.log('🔴 [CatalogoTreeItem] onRefresh() completado');
+      } else {
+        console.warn('⚠️ [CatalogoTreeItem] No hay método de refresco disponible!');
+      }
+      
+    } catch (error) {
+      console.error('❌ [CatalogoTreeItem] Error al eliminar catálogo:', error);
+    }
+  };
+
+  const handleDeleteDocumento = async (tipoDocumentoId: number, documentoId?: number) => {
     if (!documentoId) return;
     
     // Confirmación antes de eliminar
@@ -171,13 +293,18 @@ export function CatalogoTreeItem({
       await deleteDocument(documentoId);
       console.log('🔴 [CatalogoTreeItem] Documento eliminado exitosamente');
       
-      // Refrescar los datos del catálogo después de eliminar
-      if (onRefresh) {
+      // Refrescar solo la disponibilidad de documentos usando el nuevo endpoint específico
+      if (onRefreshDocumentos) {
+        console.log('🔴 [CatalogoTreeItem] Llamando a onRefreshDocumentos() con catalogoId:', item.id);
+        await onRefreshDocumentos(item.id);
+        console.log('🔴 [CatalogoTreeItem] onRefreshDocumentos() completado');
+      } else if (onRefresh) {
+        // Fallback al método antiguo si no hay onRefreshDocumentos
         console.log('🔴 [CatalogoTreeItem] Llamando a onRefresh() con catalogoId:', item.id);
         await onRefresh(item.id);
         console.log('🔴 [CatalogoTreeItem] onRefresh() completado');
       } else {
-        console.warn('⚠️ [CatalogoTreeItem] onRefresh NO está definido!');
+        console.warn('⚠️ [CatalogoTreeItem] No hay método de refresco disponible!');
       }
       
       // Pequeño delay para asegurar que la UI se actualice
@@ -254,6 +381,41 @@ export function CatalogoTreeItem({
         {!item.activo && (
           <AlertCircle className="h-4 w-4 text-red-500 ml-2" aria-label="Inactivo" />
         )}
+
+        {/* Action buttons in edit mode */}
+        {isEditMode && (
+           <div className="flex items-center gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
+           {/* Botón Agregar subcatálogo - deshabilitado si permite documentos */}
+           <Button
+             onClick={() => handleOpenCatalogoModal('create')}
+             size="sm"
+             variant="ghost"
+             className="h-7 w-7 p-0 hover:bg-blue-100 hover:text-blue-700 text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+             title={permiteDocumentos ? "No se pueden agregar subcatálogos a un catálogo que permite documentos" : "Agregar subcatálogo"}
+             disabled={permiteDocumentos}
+           >
+             <Plus className="h-3.5 w-3.5" />
+           </Button>
+           <Button
+             onClick={() => handleOpenCatalogoModal('edit')}
+             size="sm"
+             variant="ghost"
+             className="h-7 w-7 p-0 hover:bg-amber-100 hover:text-amber-700 text-amber-600"
+             title="Editar catálogo"
+           >
+             <Edit className="h-3.5 w-3.5" />
+           </Button>
+           <Button
+             onClick={handleDeleteCatalogo}
+             size="sm"
+             variant="ghost"
+             className="h-7 w-7 p-0 hover:bg-red-100 hover:text-red-700 text-red-600"
+             title="Eliminar catálogo"
+           >
+             <Trash className="h-3.5 w-3.5" />
+           </Button>
+         </div>
+        )}
       </div>
 
       {/* Children */}
@@ -270,6 +432,10 @@ export function CatalogoTreeItem({
               selectedId={selectedId}
               showDocumentos={showDocumentos}
               onRefresh={onRefresh}
+              isEditMode={isEditMode}
+              onCatalogoCreate={onCatalogoCreate}
+              onCatalogoEdit={onCatalogoEdit}
+              onCatalogoDelete={onCatalogoDelete}
             />
           ))}
         </div>
@@ -277,93 +443,130 @@ export function CatalogoTreeItem({
 
       {/* Documentos section (only for leaf nodes that allow documents) */}
       {/*showDocumentos && isExpanded &&*/ permiteDocumentos && item.disponibilidadTiposDocumento && (
-        <div style={{ paddingLeft: `${(level + 1) * 24 + 12}px` }} className="mt-2">
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="font-medium text-gray-700">Documentos disponibles</h4>
-              
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {item.disponibilidadTiposDocumento.map((tipo) => (
-                <div
-                  key={tipo.tipoDocumentoId}
-                  className={`p-3 rounded border ${
-                    tipo.disponible
-                      ? 'border-green-200 bg-green-50'
-                      : 'border-gray-200 bg-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <div className="font-medium text-gray-900">{tipo.nombre}</div>
-                      <div className="text-sm text-gray-500">.{tipo.extension}</div>
-                    </div>
-                    <div className="text-right">
-                      {tipo.disponible ? (
-                        <div>
-                          <div className="text-sm font-medium text-green-700">
-                            {tipo.documentoNombre}
-                          </div>
-                          <div className="text-xs text-green-600">Disponible</div>
-                        </div>
-                      ) : (
-                        <div className="text-sm text-gray-500">No disponible</div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Action buttons */}
-                  <div className="flex items-center justify-end gap-2 mt-3">
-                    {tipo.disponible ? (
-                      <>
-                        <button
-                          onClick={() => handleDownload(tipo.tipoDocumentoId, tipo.documentoId)}
-                          className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200"
-                        >
-                          <Download className="h-3 w-3 mr-1" />
-                          Descargar
-                        </button>
-                        <button
-                          onClick={() => handleOpenModal('edit', tipo.tipoDocumentoId, tipo.documentoId)}
-                          className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200"
-                        >
-                          <Upload className="h-3 w-3 mr-1" />
-                          Actualizar
-                        </button>
-                        <button
-                          onClick={() => handleDelete(tipo.tipoDocumentoId, tipo.documentoId)}
-                          className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200"
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Eliminar
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => handleOpenModal('create', tipo.tipoDocumentoId)}
-                        className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200"
-                      >
-                        <Upload className="h-3 w-3 mr-1" />
-                        Subir
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+         <div style={{ paddingLeft: `${(level + 1) * 24 + 12}px` }} className="mt-3">
+         <Card className="shadow-sm">
+           <CardHeader className="pb-3 space-y-0">
+             <div className="flex items-center justify-between">
+               <CardTitle className="text-base font-medium">Documentos disponibles</CardTitle>
+               <Badge variant="secondary" className="text-xs">
+                 {item.disponibilidadTiposDocumento.filter(d => d.disponible).length}/{item.disponibilidadTiposDocumento.length}
+               </Badge>
+             </div>
+           </CardHeader>
+           <CardContent className="pt-0">
+             <div className="space-y-2">
+               {item.disponibilidadTiposDocumento.map((tipo) => (
+                 <div
+                   key={tipo.tipoDocumentoId}
+                   className={`flex items-center justify-between p-2.5 rounded-lg border transition-colors ${
+                     tipo.disponible
+                       ? 'border-green-200 bg-green-50/50 hover:bg-green-50'
+                       : 'border-border bg-background hover:bg-muted/50'
+                   }`}
+                 >
+                   {/* Left side - File info */}
+                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                     <div className={`flex-shrink-0 p-1.5 rounded ${
+                       tipo.disponible ? 'bg-green-100' : 'bg-muted'
+                     }`}>
+                       <FileText className={`h-3.5 w-3.5 ${
+                         tipo.disponible ? 'text-green-700' : 'text-muted-foreground'
+                       }`} />
+                     </div>
+                     
+                     <div className="min-w-0 flex-1">
+                       <div className="flex items-center gap-1.5">
+                         <span className="font-medium text-sm">{tipo.nombre}</span>
+                         <span className="text-xs text-muted-foreground">.{tipo.extension}</span>
+                       </div>
+                       {tipo.disponible && tipo.documentoNombre && (
+                         <div className="text-xs text-muted-foreground truncate">
+                           {tipo.documentoNombre}
+                         </div>
+                       )}
+                     </div>
+   
+                     {/* Status badge */}
+                     {tipo.disponible ? (
+                       <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-xs flex-shrink-0 gap-1">
+                         <CheckCircle2 className="h-3 w-3" />
+                         Disponible
+                       </Badge>
+                     ) : (
+                       <span className="text-xs text-muted-foreground flex-shrink-0">No disponible</span>
+                     )}
+                   </div>
+   
+                   {/* Right side - Actions */}
+                   <div className="flex items-center gap-1.5 ml-3 flex-shrink-0">
+                     {tipo.disponible ? (
+                       <>
+                         <Button
+                           onClick={() => handleDownload(tipo.tipoDocumentoId, tipo.documentoId)}
+                           size="sm"
+                           variant="ghost"
+                           className="h-7 px-2 text-green-700 hover:text-green-800 hover:bg-green-100"
+                         >
+                           <Download className="h-3.5 w-3.5 mr-1" />
+                           Descargar
+                         </Button>
+                         <Button
+                           onClick={() => handleOpenDocumentoModal('edit', tipo.tipoDocumentoId, tipo.documentoId)}
+                           size="sm"
+                           variant="ghost"
+                           className="h-7 px-2 text-blue-700 hover:text-blue-800 hover:bg-blue-100"
+                         >
+                           <Upload className="h-3.5 w-3.5 mr-1" />
+                           Actualizar
+                         </Button>
+                         <Button
+                           onClick={() => handleDeleteDocumento(tipo.tipoDocumentoId, tipo.documentoId)}
+                           size="sm"
+                           variant="ghost"
+                           className="h-7 w-7 p-0 text-red-700 hover:text-red-800 hover:bg-red-100"
+                         >
+                           <Trash2 className="h-3.5 w-3.5" />
+                         </Button>
+                       </>
+                     ) : (
+                       <Button
+                         onClick={() => handleOpenDocumentoModal('create', tipo.tipoDocumentoId)}
+                         size="sm"
+                         variant="ghost"
+                         className="h-7 px-2 hover:bg-muted"
+                       >
+                         <Upload className="h-3.5 w-3.5 mr-1" />
+                         Subir
+                       </Button>
+                     )}
+                   </div>
+                 </div>
+               ))}
+             </div>
+           </CardContent>
+         </Card>
+       </div>
       )}
 
       {/* Documento Modal */}
       <DocumentoModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onSubmit={handleSubmitModal}
+        isOpen={isDocumentoModalOpen}
+        onClose={handleCloseDocumentoModal}
+        onSubmit={handleSubmitDocumentoModal}
         mode={modalMode}
         catalogo={item}
-        documentoId={selectedDocumentoId} // Por ahora null, podríamos obtenerlo si estamos editando
+        documentoId={selectedDocumentoId}
         tipoDocumentoId={selectedTipoDocumentoId}
+      />
+
+      {/* Catalogo Modal */}
+      <CatalogoFormModal
+        open={isCatalogoModalOpen}
+        onClose={handleCloseCatalogoModal}
+        onSubmit={handleSubmitCatalogoModal}
+        catalogo={modalMode === 'edit' ? item : null}
+        parentCatalogo={modalMode === 'create' ? item : null}
+        mode={modalMode}
       />
     </div>
   );

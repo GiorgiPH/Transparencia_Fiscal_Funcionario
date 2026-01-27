@@ -16,8 +16,8 @@ export default function CatalogosPage() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
 
-  const canUpload = user?.rol === "Admin" || user?.rol === "Upload"
-  const canEditCatalogs = user?.rol === "Admin" // Solo admin puede editar catálogos
+  const canUpload = user?.rol === "Admin" || user?.rol === "Upload" || user?.rol === "Edit"
+  const canEditCatalogs = user?.rol === "Admin" || user?.rol === "Edit" // Admin y Edit pueden editar catálogos
 
   const handleRefreshCatalogo = async (catalogoId: number) => {
     console.log("🟢 [CatalogosPage] handleRefreshCatalogo llamado con catalogoId:", catalogoId);

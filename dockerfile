@@ -25,38 +25,68 @@ ENV NODE_ENV=production
 # Construir la aplicación
 RUN npm run build
 
+# # Etapa 2: Producción
+# FROM node:20-alpine AS runner
+# WORKDIR /app
+
+# # Configurar zona horaria (México)
+# RUN apk add --no-cache tzdata && \
+#     cp /usr/share/zoneinfo/America/Mexico_City /etc/localtime && \
+#     echo "America/Mexico_City" > /etc/timezone
+
+# # Crear usuario no-root para seguridad
+# RUN addgroup -g 1001 -S nodejs && \
+#     adduser -S nextjs -u 1001 -G nodejs
+
+# # Variables de entorno de producción
+# ENV NODE_ENV=production
+# ENV NEXT_TELEMETRY_DISABLED=1
+# ENV PORT=3000
+
+# # Copiar archivos necesarios del builder
+# COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+# COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+# COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+
+# # Configurar permisos
+# USER nextjs
+
+# # Exponer puerto
+# EXPOSE 3003
+
+# # Comando de inicio
+# CMD ["npm", "start"]
+
 # Etapa 2: Producción
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Configurar zona horaria (México)
+# Zona horaria
 RUN apk add --no-cache tzdata && \
     cp /usr/share/zoneinfo/America/Mexico_City /etc/localtime && \
     echo "America/Mexico_City" > /etc/timezone
 
-# Crear usuario no-root para seguridad
+# Usuario seguro
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001 -G nodejs
 
-# Variables de entorno de producción
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 
-# Copiar archivos necesarios del builder
+# ✅ SOLO STANDALONE
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-# Configurar permisos
 USER nextjs
 
-# Exponer puerto
-EXPOSE 3003
+EXPOSE 3000
 
-# Comando de inicio
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
+
+
 
 # ============================================
 # CONFIGURACIÓN AVANZADA

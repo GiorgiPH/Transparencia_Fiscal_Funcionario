@@ -180,8 +180,18 @@ export function useUsers() {
     setIsLoading(true);
     setError(null);
     try {
+      // El backend desactiva el usuario en lugar de eliminarlo físicamente
       await userService.deleteAdminUser(id);
-      setUsers(prevUsers => prevUsers.filter(user => user.id !== id.toString()));
+      
+      // Actualizar el usuario en la lista estableciendo activo: false
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === id.toString() 
+            ? { ...user, activo: false } 
+            : user
+        )
+      );
+      
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar usuario';
       setError(message);

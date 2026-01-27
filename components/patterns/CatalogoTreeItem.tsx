@@ -4,6 +4,7 @@ import { ChevronRight, ChevronDown, Folder, FileText, AlertCircle, Download, Upl
 import { DocumentoModal } from './DocumentoModal';
 import { CatalogoFormModal } from './CatalogoFormModal';
 import { useCatalogs } from '@/hooks/useCatalogs';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -44,6 +45,7 @@ export function  CatalogoTreeItem({
 }: CatalogoTreeItemProps) {
   console.log(`🔵 [CatalogoTreeItem] Renderizando item ${item.id} "${item.nombre}", onRefresh existe?:`, !!onRefresh);
   
+  const { user } = useAuth();
   const [isDocumentoModalOpen, setIsDocumentoModalOpen] = useState(false);
   const [isCatalogoModalOpen, setIsCatalogoModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
@@ -61,6 +63,32 @@ export function  CatalogoTreeItem({
   const isSelected = selectedId === item.id;
   const permiteDocumentos = item.permite_documentos;
   const hasDocumentos = item._count?.documentos && item._count.documentos > 0;
+
+  // Funciones helper para control de permisos basados en rol
+  const canDownload = () => {
+    const userRole = user?.rol;
+    return userRole === "Admin" || userRole === "Edit" || userRole === "Upload";
+  };
+
+  const canUpload = () => {
+    const userRole = user?.rol;
+    return userRole === "Admin" || userRole === "Edit" || userRole === "Upload";
+  };
+
+  const canUpdate = () => {
+    const userRole = user?.rol;
+    return userRole === "Admin" || userRole === "Edit";
+  };
+
+  const canDelete = () => {
+    const userRole = user?.rol;
+    return userRole === "Admin" || userRole === "Edit";
+  };
+
+  const canEditCatalogs = () => {
+    const userRole = user?.rol;
+    return userRole === "Admin" || userRole === "Edit";
+  };
 
   const handleToggle = () => {
     if (isLoading) return;
@@ -501,43 +529,51 @@ export function  CatalogoTreeItem({
                    <div className="flex items-center gap-1.5 ml-3 flex-shrink-0">
                      {tipo.disponible ? (
                        <>
-                         <Button
-                           onClick={() => handleDownload(tipo.tipoDocumentoId, tipo.documentoId)}
-                           size="sm"
-                           variant="ghost"
-                           className="h-7 px-2 text-green-700 hover:text-green-800 hover:bg-green-100"
-                         >
-                           <Download className="h-3.5 w-3.5 mr-1" />
-                           Descargar
-                         </Button>
-                         <Button
-                           onClick={() => handleOpenDocumentoModal('edit', tipo.tipoDocumentoId, tipo.documentoId)}
-                           size="sm"
-                           variant="ghost"
-                           className="h-7 px-2 text-blue-700 hover:text-blue-800 hover:bg-blue-100"
-                         >
-                           <Upload className="h-3.5 w-3.5 mr-1" />
-                           Actualizar
-                         </Button>
-                         <Button
-                           onClick={() => handleDeleteDocumento(tipo.tipoDocumentoId, tipo.documentoId)}
-                           size="sm"
-                           variant="ghost"
-                           className="h-7 w-7 p-0 text-red-700 hover:text-red-800 hover:bg-red-100"
-                         >
-                           <Trash2 className="h-3.5 w-3.5" />
-                         </Button>
+                         {canDownload() && (
+                           <Button
+                             onClick={() => handleDownload(tipo.tipoDocumentoId, tipo.documentoId)}
+                             size="sm"
+                             variant="ghost"
+                             className="h-7 px-2 text-green-700 hover:text-green-800 hover:bg-green-100"
+                           >
+                             <Download className="h-3.5 w-3.5 mr-1" />
+                             Descargar
+                           </Button>
+                         )}
+                         {canUpdate() && (
+                           <Button
+                             onClick={() => handleOpenDocumentoModal('edit', tipo.tipoDocumentoId, tipo.documentoId)}
+                             size="sm"
+                             variant="ghost"
+                             className="h-7 px-2 text-blue-700 hover:text-blue-800 hover:bg-blue-100"
+                           >
+                             <Upload className="h-3.5 w-3.5 mr-1" />
+                             Actualizar
+                           </Button>
+                         )}
+                         {canDelete() && (
+                           <Button
+                             onClick={() => handleDeleteDocumento(tipo.tipoDocumentoId, tipo.documentoId)}
+                             size="sm"
+                             variant="ghost"
+                             className="h-7 w-7 p-0 text-red-700 hover:text-red-800 hover:bg-red-100"
+                           >
+                             <Trash2 className="h-3.5 w-3.5" />
+                           </Button>
+                         )}
                        </>
                      ) : (
-                       <Button
-                         onClick={() => handleOpenDocumentoModal('create', tipo.tipoDocumentoId)}
-                         size="sm"
-                         variant="ghost"
-                         className="h-7 px-2 hover:bg-muted"
-                       >
-                         <Upload className="h-3.5 w-3.5 mr-1" />
-                         Subir
-                       </Button>
+                       canUpload() && (
+                         <Button
+                           onClick={() => handleOpenDocumentoModal('create', tipo.tipoDocumentoId)}
+                           size="sm"
+                           variant="ghost"
+                           className="h-7 px-2 hover:bg-muted"
+                         >
+                           <Upload className="h-3.5 w-3.5 mr-1" />
+                           Subir
+                         </Button>
+                       )
                      )}
                    </div>
                  </div>

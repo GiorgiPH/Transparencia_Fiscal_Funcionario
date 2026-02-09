@@ -44,7 +44,7 @@ const adminUserToUser = (apiUser: ApiAdminUser): User => {
     activo: apiUser.activo,
     telefono: apiUser.telefono || undefined,
     requiere_2fa: apiUser.requiere_2fa,
-    institucion_id: apiUser.institucion_id || undefined,
+    dependenciaId: apiUser.dependenciaId ? apiUser.dependenciaId : undefined,
     createdAt: apiUser.fecha_creacion,
     updatedAt: apiUser.fecha_modificacion,
     roles: apiUser.roles?.map(r => r.nombre),

@@ -53,7 +53,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
     console.error('Failed to refresh token:', error);
     authStore.getState().logout();
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.href = '/transparencia-fiscal-operativo/login';
     }
     return null;
   }
@@ -143,7 +143,7 @@ class ApiClient {
             authStore.getState().logout();
             
             if (typeof window !== 'undefined') {
-              window.location.href = '/login';
+              window.location.href = '/transparencia-fiscal-operativo/login';
             }
           } finally {
             this.isRefreshing = false;

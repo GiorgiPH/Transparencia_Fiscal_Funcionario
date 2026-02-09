@@ -8,6 +8,7 @@ import { Header } from "@/components/features/dashboard/Header"
 import { Footer } from "@/components/features/dashboard/Footer"
 import { Loading } from "@/components/shared/Loading"
 import { useAuth } from "@/hooks/useAuth"
+import { Toaster } from "@/components/ui/sonner"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -39,6 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 p-6">{children}</main>
         <Footer />
       </div>
+      <Toaster />
     </div>
   )
 }

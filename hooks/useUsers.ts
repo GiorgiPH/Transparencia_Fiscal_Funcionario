@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { userService } from '@/services/userService';
 import type { User, UpdateProfileData, ApiRole, CreateUserData, UpdateUserData } from '@/types/auth';
+import { useCrudNotifications } from './useNotifications';
 
 export function useUsers() {
   const [users, setUsers] = useState<User[]>([]);
@@ -11,21 +12,25 @@ export function useUsers() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const notifications = useCrudNotifications("Usuario");
+
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const data = await userService.getAdminUsers();
       setUsers(data);
+      notifications.showFetchSuccess();
       return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cargar usuarios';
       setError(message);
+      notifications.showFetchError(message);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [notifications]);
 
   const fetchRoles = useCallback(async (activo: boolean = true) => {
     setIsLoading(true);
@@ -76,16 +81,19 @@ export function useUsers() {
       if (currentUser?.id === userId) {
         setCurrentUser(updatedUser);
       }
+
+      notifications.showUpdateSuccess();
       
       return updatedUser;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar perfil';
       setError(message);
+      notifications.showUpdateError(message);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, notifications]);
 
   const updateCurrentUserProfile = useCallback(async (data: UpdateProfileData) => {
     setIsLoading(true);
@@ -93,44 +101,54 @@ export function useUsers() {
     try {
       const updatedUser = await userService.updateCurrentProfile(data);
       setCurrentUser(updatedUser);
+      notifications.showUpdateSuccess();
       return updatedUser;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar perfil';
       setError(message);
+      notifications.showUpdateError(message);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [notifications]);
 
   const uploadProfilePhoto = useCallback(async (file: File) => {
     setIsLoading(true);
     setError(null);
     try {
       const result = await userService.uploadProfilePhoto(file);
+      notifications.showSuccess("Foto de perfil actualizada exitosamente");
       return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al subir foto';
       setError(message);
+      notifications.showError("Error al subir foto de perfil", {
+        description: message,
+      });
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [notifications]);
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
     setIsLoading(true);
     setError(null);
     try {
       await userService.changePassword({ currentPassword, newPassword });
+      notifications.showSuccess("Contraseña cambiada exitosamente");
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cambiar contraseña';
       setError(message);
+      notifications.showError("Error al cambiar contraseña", {
+        description: message,
+      });
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [notifications]);
 
   const createUser = useCallback(async (data: CreateUserData, file?: File) => {
     setIsLoading(true);
@@ -138,15 +156,17 @@ export function useUsers() {
     try {
       const newUser = await userService.createAdminUser(data, file);
       setUsers(prevUsers => [...prevUsers, newUser]);
+      notifications.showCreateSuccess();
       return newUser;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear usuario';
       setError(message);
+      notifications.showCreateError(message);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [notifications]);
 
   const updateUser = useCallback(async (id: number, data: UpdateUserData, file?: File) => {
     setIsLoading(true);
@@ -165,16 +185,19 @@ export function useUsers() {
       if (currentUser?.id === id.toString()) {
         setCurrentUser(updatedUser);
       }
+
+      notifications.showUpdateSuccess();
       
       return updatedUser;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar usuario';
       setError(message);
+      notifications.showUpdateError(message);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, notifications]);
 
   const deleteUser = useCallback(async (id: number) => {
     setIsLoading(true);
@@ -191,15 +214,18 @@ export function useUsers() {
             : user
         )
       );
+
+      notifications.showDeleteSuccess();
       
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar usuario';
       setError(message);
+      notifications.showDeleteError(message);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [notifications]);
 
   const fetchAdminUserById = useCallback(async (id: number) => {
     setIsLoading(true);

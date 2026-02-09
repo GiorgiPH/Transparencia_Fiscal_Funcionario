@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ApiRole, CreateUserData, UpdateUserData, User } from "@/types/auth"
-import { useUsers } from "@/hooks/useUsers"
+import type { Dependencia } from "@/types/dependencia"
+import DependenciaService from "@/services/dependenciaService"
 
 interface UserFormModalProps {
   open: boolean
@@ -24,43 +26,67 @@ export function UserFormModal({ open, onClose, onSubmit, user, roles }: UserForm
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([])
-  const [institucionId, setInstitucionId] = useState("")
+  const [dependenciaId, setDependenciaId] = useState<number | undefined>(undefined)
   const [telefono, setTelefono] = useState("")
   const [requiere2fa, setRequiere2fa] = useState(false)
   const [activo, setActivo] = useState(true)
   const [password, setPassword] = useState("")
   const [profileFile, setProfileFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [dependencias, setDependencias] = useState<Dependencia[]>([])
+  const [isLoadingDependencias, setIsLoadingDependencias] = useState(false)
 
+  // Cargar dependencias cuando se abre el modal
   useEffect(() => {
-    if (user && open) {
+    const loadDependencias = async () => {
+      if (open) {
+        setIsLoadingDependencias(true)
+        
+        try {
+          const dependenciasData = await DependenciaService.getDependenciasForUserSelection()
+          setDependencias(dependenciasData)
+        } catch (error) {
+          console.error("Error al cargar dependencias:", error)
+        } finally {
+          setIsLoadingDependencias(false)
+        }
+      }
+    }
+
+    loadDependencias()
+  }, [open])
+
+  // Establecer valores del usuario cuando se abre el modal y las dependencias están cargadas
+  useEffect(() => {
+    if (user && open && !isLoadingDependencias) {
       setName(user.nombre)
       setEmail(user.email)
-      setInstitucionId(user.institucion_id || "")
+        setDependenciaId(user.dependenciaId)
+
       setTelefono(user.telefono || "")
       setRequiere2fa(user.requiere_2fa || false)
       setActivo(user.activo !== false) // Si es undefined, mostrar como activo
       
       // Convertir roles del usuario a IDs seleccionados
       if (user.roles && roles.length > 0) {
-        console.log( "Hola: " + user.roles);
         const userRoleIds = roles
           .filter(role => user.roles?.includes(role.nombre))
           .map(role => role.id)
         setSelectedRoleIds(userRoleIds)
       }
-    } else {
+    } else if (!user && open) {
+      // Resetear valores para creación
       setName("")
       setEmail("")
       setSelectedRoleIds([])
-      setInstitucionId("")
+      setDependenciaId(undefined)
       setTelefono("")
       setRequiere2fa(false)
       setActivo(true)
       setPassword("")
       setProfileFile(null)
     }
-  }, [user, open, roles])
+  }, [user, open, roles, isLoadingDependencias])
 
   const handleRoleToggle = (roleId: number) => {
     setSelectedRoleIds(prev => 
@@ -87,7 +113,7 @@ export function UserFormModal({ open, onClose, onSubmit, user, roles }: UserForm
         const updateData: UpdateUserData = {
           name,
           email,
-          institucion_id: institucionId || undefined,
+          dependenciaId,
           telefono: telefono || undefined,
           roleIds: selectedRoleIds.length > 0 ? selectedRoleIds : undefined,
           requiere_2fa: requiere2fa,
@@ -100,7 +126,7 @@ export function UserFormModal({ open, onClose, onSubmit, user, roles }: UserForm
           name,
           email,
           password,
-          institucion_id: institucionId || undefined,
+          dependenciaId,
           telefono: telefono || undefined,
           roleIds: selectedRoleIds,
           requiere_2fa: requiere2fa,
@@ -118,7 +144,7 @@ export function UserFormModal({ open, onClose, onSubmit, user, roles }: UserForm
     setName("")
     setEmail("")
     setSelectedRoleIds([])
-    setInstitucionId("")
+    setDependenciaId(undefined)
     setTelefono("")
     setRequiere2fa(false)
     setActivo(true)
@@ -179,14 +205,27 @@ export function UserFormModal({ open, onClose, onSubmit, user, roles }: UserForm
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="institucionId">Institución ID</Label>
-            <Input
-              id="institucionId"
-              type="text"
-              value={institucionId}
-              onChange={(e) => setInstitucionId(e.target.value)}
-              placeholder="inst-001"
-            />
+            <Label htmlFor="dependenciaId">Dependencia</Label>
+            <Select
+              value={dependenciaId?.toString() || "0"}
+              onValueChange={(value) => setDependenciaId(value === "0" ? undefined : parseInt(value))}
+              disabled={isLoadingDependencias}
+            >
+              <SelectTrigger id="dependenciaId">
+                <SelectValue placeholder={isLoadingDependencias ? "Cargando dependencias..." : "Seleccione una dependencia"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Sin dependencia</SelectItem>
+                {dependencias.map((dependencia) => (
+                  <SelectItem key={dependencia.id} value={dependencia.id.toString()}>
+                    {dependencia.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {isLoadingDependencias && (
+              <p className="text-xs text-muted-foreground">Cargando dependencias...</p>
+            )}
           </div>
 
           <div className="space-y-2">

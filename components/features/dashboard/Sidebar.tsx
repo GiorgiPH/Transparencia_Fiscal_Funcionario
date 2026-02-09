@@ -35,7 +35,7 @@ export function Sidebar({ user }: SidebarProps) {
         <div className="border-b p-6">
           <div className="flex items-center justify-center">
             <img
-              src="/Hacienda-Header-Izquierdo.png"
+              src="/transparencia-fiscal-operativo/Hacienda-Header-Izquierdo.png"
               alt="Logo Portal Transparencia Fiscal"
               className="h-10 w-auto object-contain"
             />

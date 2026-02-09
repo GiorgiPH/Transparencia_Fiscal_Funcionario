@@ -70,7 +70,7 @@ export function ProfileForm({ user, onUpdate }: ProfileFormProps) {
           {/* Profile Photo */}
           <div className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={fotoPerfil || "/placeholder.svg"} />
+              <AvatarImage src={fotoPerfil || "/transparencia-fiscal-operativo/placeholder.svg"} />
               <AvatarFallback className="bg-primary text-lg text-primary-foreground">{initials}</AvatarFallback>
             </Avatar>
             <div>

@@ -19,7 +19,7 @@ export interface User {
   activo?: boolean
   telefono?: string
   requiere_2fa?: boolean
-  institucion_id?: string
+  dependenciaId?: number
   createdAt: string
   updatedAt: string
   // Campos adicionales para compatibilidad con API
@@ -43,7 +43,7 @@ export interface ApiAdminUser {
   fecha_ultimo_cambio_pass: string | null
   usuario_creacion_id: number | null
   usuario_modif_id: number | null
-  institucion_id: string | null
+  dependenciaId: number | null
   roles?: ApiRole[] // Se agregará cuando el endpoint regrese roles
 }
 
@@ -60,7 +60,7 @@ export interface CreateUserData {
   name: string
   email: string
   password: string
-  institucion_id?: string
+  dependenciaId?: number
   telefono?: string
   roleIds: number[]
   requiere_2fa?: boolean
@@ -70,7 +70,7 @@ export interface CreateUserData {
 export interface UpdateUserData {
   name?: string
   email?: string
-  institucion_id?: string
+  dependenciaId?: number
   telefono?: string
   roleIds?: number[]
   requiere_2fa?: boolean

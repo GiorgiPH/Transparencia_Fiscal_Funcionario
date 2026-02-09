@@ -40,7 +40,7 @@ export function UserListContainer({
       fetchUsers();
       fetchRoles();
     }
-  }, [autoLoad, fetchUsers, fetchRoles]);
+  }, [autoLoad]);
 
   const handleRefresh = () => {
     clearError();

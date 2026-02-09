@@ -5,6 +5,7 @@ export interface UserManagement {
   rol: "Admin" | "Upload" | "Edit"
   area: string
   activo: boolean
+  dependenciaId: number
   createdAt: string
   updatedAt: string
 }

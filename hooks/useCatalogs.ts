@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { catalogService, type CreateCatalogoData, type UpdateCatalogoData } from "@/services/catalogService"
 import type { Catalogo, Documento, TipoDocumento, CatalogoTreeItem } from "@/types/catalog"
-import { useToast } from "@/hooks/use-toast"
+import { useCrudNotifications } from "./useNotifications"
 
 export function useCatalogs() {
   const [rootCatalogs, setRootCatalogs] = useState<Catalogo[]>([])
@@ -11,7 +11,7 @@ export function useCatalogs() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [documentTypes, setDocumentTypes] = useState<TipoDocumento[]>([])
-  const { toast } = useToast()
+  const notifications = useCrudNotifications("Catálogo")
 
   useEffect(() => {
     loadRootCatalogs()
@@ -74,18 +74,11 @@ export function useCatalogs() {
   const createCatalog = async (data: CreateCatalogoData): Promise<Catalogo | null> => {
     try {
       const result = await catalogService.createCatalog(data)
-      toast({
-        title: "Catálogo creado",
-        description: "El catálogo se ha creado exitosamente.",
-      })
+      notifications.showCreateSuccess()
       return result
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Error al crear catálogo"
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      })
+      notifications.showCreateError(errorMessage)
       console.error("Error al crear catálogo:", err)
       return null
     }
@@ -94,18 +87,11 @@ export function useCatalogs() {
   const updateCatalog = async (catalogId: number, data: UpdateCatalogoData): Promise<Catalogo | null> => {
     try {
       const result = await catalogService.updateCatalog(catalogId, data)
-      toast({
-        title: "Catálogo actualizado",
-        description: "El catálogo se ha actualizado exitosamente.",
-      })
+      notifications.showUpdateSuccess()
       return result
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Error al actualizar catálogo"
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      })
+      notifications.showUpdateError(errorMessage)
       console.error("Error al actualizar catálogo:", err)
       return null
     }
@@ -114,18 +100,11 @@ export function useCatalogs() {
   const deleteCatalog = async (catalogId: number): Promise<boolean> => {
     try {
       await catalogService.deleteCatalog(catalogId)
-      toast({
-        title: "Catálogo eliminado",
-        description: "El catálogo se ha eliminado exitosamente.",
-      })
+      notifications.showDeleteSuccess()
       return true
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Error al eliminar catálogo"
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      })
+      notifications.showDeleteError(errorMessage)
       console.error("Error al eliminar catálogo:", err)
       return false
     }
@@ -133,9 +112,14 @@ export function useCatalogs() {
 
   const createDocument = async (formData: FormData): Promise<Documento> => {
     try {
-      return await catalogService.createDocument(formData)
-    } catch (err) {
-      setError("Error al crear documento")
+      const result = await catalogService.createDocument(formData)
+      notifications.showSuccess("Documento creado exitosamente")
+      return result
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Error al crear documento"
+      notifications.showError("Error al crear documento", {
+        description: errorMessage,
+      })
       console.error(err)
       throw err
     }
@@ -143,9 +127,14 @@ export function useCatalogs() {
 
   const updateDocument = async (documentId: number, formData: FormData): Promise<Documento> => {
     try {
-      return await catalogService.updateDocument(documentId, formData)
-    } catch (err) {
-      setError("Error al actualizar documento")
+      const result = await catalogService.updateDocument(documentId, formData)
+      notifications.showSuccess("Documento actualizado exitosamente")
+      return result
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Error al actualizar documento"
+      notifications.showError("Error al actualizar documento", {
+        description: errorMessage,
+      })
       console.error(err)
       throw err
     }
@@ -154,8 +143,12 @@ export function useCatalogs() {
   const deleteDocument = async (documentId: number): Promise<void> => {
     try {
       await catalogService.deleteDocument(documentId)
-    } catch (err) {
-      setError("Error al eliminar documento")
+      notifications.showSuccess("Documento eliminado exitosamente")
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Error al eliminar documento"
+      notifications.showError("Error al eliminar documento", {
+        description: errorMessage,
+      })
       console.error(err)
       throw err
     }

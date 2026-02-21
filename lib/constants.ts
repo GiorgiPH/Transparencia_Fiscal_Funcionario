@@ -16,6 +16,7 @@ export const CONTACT_INFO = {
 export const NAVIGATION_ITEMS = [
   { id: "home", label: "HOME", path: "/dashboard" },
   { id: "catalogs", label: "CATÁLOGOS", path: "/dashboard/catalogos" },
+  { id: "estrategias-comunicacion", label: "ESTRATEGIAS DE COMUNICACIÓN", path: "/dashboard/estrategias-comunicacion" },
   { id: "config", label: "CONFIGURACIÓN", path: "/dashboard/configuracion" },
   { id: "users", label: "USUARIOS", path: "/dashboard/usuarios", adminOnly: true },
 ]

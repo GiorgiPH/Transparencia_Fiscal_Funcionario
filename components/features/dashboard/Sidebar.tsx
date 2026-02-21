@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { NAVIGATION_ITEMS } from "@/lib/constants"
-import { Home, BookOpen, Settings, Users } from "lucide-react"
+import { Home, BookOpen, Settings, Users, Megaphone } from "lucide-react"
 import type { User } from "@/types/auth"
 
 interface SidebarProps {
@@ -14,6 +14,7 @@ interface SidebarProps {
 const iconMap = {
   home: Home,
   catalogs: BookOpen,
+  "estrategias-comunicacion": Megaphone,
   config: Settings,
   users: Users,
 }

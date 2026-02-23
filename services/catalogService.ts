@@ -1,4 +1,4 @@
-import type { Catalogo, Documento, TipoDocumento } from "@/types/catalog"
+import type { Catalogo, Documento, TipoDocumento, Periodicidad } from "@/types/catalog"
 import { apiClient } from "@/lib/api/axios-client"
 
 // Datos mock para desarrollo cuando la API no está disponible
@@ -394,6 +394,20 @@ export const catalogService = {
     return withMockFallback(
       () => apiClient.get<TipoDocumento[]>("/catalogos/tipos-documento"),
       mockDocumentTypes
+    )
+  },
+
+  // Obtener periodicidades
+  async getPeriodicidades(): Promise<Periodicidad[]> {
+    return withMockFallback(
+      () => apiClient.get<Periodicidad[]>("/admin/catalogos/periodicidades"),
+      // Mock data para desarrollo
+      [
+        { id: 1, nombre: "Anual", mesesPorPeriodo: 12, periodosPorAnio: 1, activo: true },
+        { id: 2, nombre: "Semestral", mesesPorPeriodo: 6, periodosPorAnio: 2, activo: true },
+        { id: 3, nombre: "Trimestral", mesesPorPeriodo: 3, periodosPorAnio: 4, activo: true },
+        { id: 4, nombre: "Mensual", mesesPorPeriodo: 1, periodosPorAnio: 12, activo: true },
+      ]
     )
   },
 

@@ -7,6 +7,7 @@ export interface Noticia {
   descripcion_corta: string;
   contenido: string;
   imagen_url?: string;
+  link: string;
   fecha_publicacion: string; // ISO string
   activo: boolean;
   fecha_creacion: string; // ISO string
@@ -18,6 +19,7 @@ export interface CreateNoticiaData {
   descripcion_corta: string;
   contenido: string;
   imagen_url?: string;
+  link: string;
   fecha_publicacion: string; // ISO string
   activo?: boolean;
 }
@@ -27,6 +29,7 @@ export interface UpdateNoticiaData {
   descripcion_corta?: string;
   contenido?: string;
   imagen_url?: string;
+  link: string;
   fecha_publicacion?: string; // ISO string
   activo?: boolean;
 }

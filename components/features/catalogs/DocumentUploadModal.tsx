@@ -2,29 +2,53 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Upload, X, FileIcon } from "lucide-react"
-import type { DocumentType, Periodicity } from "@/types/catalog"
+import { Upload, X, FileIcon, Loader2 } from "lucide-react"
+import type { DocumentType, Periodicidad } from "@/types/catalog"
+import { catalogService } from "@/services/catalogService"
 
 interface DocumentUploadModalProps {
   open: boolean
   onClose: () => void
-  onUpload: (data: { tipo: DocumentType; periodicidad: Periodicity; archivo: File }) => Promise<void>
+  onUpload: (data: { tipo: DocumentType; periodicidad: string; archivo: File }) => Promise<void>
   subcategoryName: string
 }
 
 const documentTypes: DocumentType[] = ["Excel", "PDF", "Word", "CSV", "JSON", "XML"]
-const periodicities: Periodicity[] = ["Anual", "Mensual", "Semestral", "Trimestral"]
 
 export function DocumentUploadModal({ open, onClose, onUpload, subcategoryName }: DocumentUploadModalProps) {
   const [tipo, setTipo] = useState<DocumentType>("PDF")
-  const [periodicidad, setPeriodicidad] = useState<Periodicity>("Anual")
+  const [periodicidad, setPeriodicidad] = useState<string>("")
   const [archivo, setArchivo] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [periodicidades, setPeriodicidades] = useState<Periodicidad[]>([])
+  const [isLoadingPeriodicidades, setIsLoadingPeriodicidades] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      loadPeriodicidades()
+    }
+  }, [open])
+
+  const loadPeriodicidades = async () => {
+    setIsLoadingPeriodicidades(true)
+    try {
+      const data = await catalogService.getPeriodicidades()
+      setPeriodicidades(data)
+      // Establecer la primera periodicidad como valor por defecto si hay datos
+      if (data.length > 0 && !periodicidad) {
+        setPeriodicidad(data[0].nombre)
+      }
+    } catch (error) {
+      console.error("Error al cargar periodicidades:", error)
+    } finally {
+      setIsLoadingPeriodicidades(false)
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -35,7 +59,7 @@ export function DocumentUploadModal({ open, onClose, onUpload, subcategoryName }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!archivo) return
+    if (!archivo || !periodicidad) return
 
     setIsUploading(true)
     try {
@@ -48,7 +72,7 @@ export function DocumentUploadModal({ open, onClose, onUpload, subcategoryName }
 
   const handleClose = () => {
     setTipo("PDF")
-    setPeriodicidad("Anual")
+    setPeriodicidad("")
     setArchivo(null)
     onClose()
   }
@@ -82,14 +106,27 @@ export function DocumentUploadModal({ open, onClose, onUpload, subcategoryName }
           {/* Periodicity */}
           <div className="space-y-2">
             <Label htmlFor="periodicidad">Periodicidad</Label>
-            <Select value={periodicidad} onValueChange={(value) => setPeriodicidad(value as Periodicity)}>
+            <Select 
+              value={periodicidad} 
+              onValueChange={setPeriodicidad}
+              disabled={isLoadingPeriodicidades || periodicidades.length === 0}
+            >
               <SelectTrigger id="periodicidad">
-                <SelectValue />
+                {isLoadingPeriodicidades ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Cargando periodicidades...</span>
+                  </div>
+                ) : periodicidades.length === 0 ? (
+                  <span>No hay periodicidades disponibles</span>
+                ) : (
+                  <SelectValue placeholder="Seleccione una periodicidad" />
+                )}
               </SelectTrigger>
               <SelectContent>
-                {periodicities.map((period) => (
-                  <SelectItem key={period} value={period}>
-                    {period}
+                {periodicidades.map((period) => (
+                  <SelectItem key={period.id} value={period.nombre}>
+                    {period.nombre}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -135,7 +172,10 @@ export function DocumentUploadModal({ open, onClose, onUpload, subcategoryName }
             <Button type="button" variant="outline" onClick={handleClose} disabled={isUploading}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={!archivo || isUploading}>
+            <Button 
+              type="submit" 
+              disabled={!archivo || !periodicidad || isUploading || isLoadingPeriodicidades}
+            >
               {isUploading ? "Subiendo..." : "Subir Documento"}
             </Button>
           </div>

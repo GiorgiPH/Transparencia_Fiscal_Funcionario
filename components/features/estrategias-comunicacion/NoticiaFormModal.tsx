@@ -22,6 +22,8 @@ export function NoticiaFormModal({ open, onClose, onSubmit, noticia }: NoticiaFo
   const [titulo, setTitulo] = useState("")
   const [descripcionCorta, setDescripcionCorta] = useState("")
   const [contenido, setContenido] = useState("")
+  const [link, setLink] = useState("")
+
   const [fechaPublicacion, setFechaPublicacion] = useState("")
   const [activo, setActivo] = useState(true)
   const [imagenFile, setImagenFile] = useState<File | null>(null)
@@ -33,6 +35,7 @@ export function NoticiaFormModal({ open, onClose, onSubmit, noticia }: NoticiaFo
       setTitulo(noticia.titulo)
       setDescripcionCorta(noticia.descripcion_corta)
       setContenido(noticia.contenido)
+      setLink(noticia.link)
       setFechaPublicacion(noticia.fecha_publicacion.split('T')[0]) // Formato YYYY-MM-DD
       setActivo(noticia.activo)
       setImagenFile(null)
@@ -41,6 +44,8 @@ export function NoticiaFormModal({ open, onClose, onSubmit, noticia }: NoticiaFo
       setTitulo("")
       setDescripcionCorta("")
       setContenido("")
+      setLink("#")
+
       setFechaPublicacion(new Date().toISOString().split('T')[0]) // Fecha actual
       setActivo(true)
       setImagenFile(null)
@@ -67,6 +72,7 @@ export function NoticiaFormModal({ open, onClose, onSubmit, noticia }: NoticiaFo
           titulo,
           descripcion_corta: descripcionCorta,
           contenido,
+          link,
           fecha_publicacion: fechaPublicacionISO,
           activo,
         }
@@ -77,6 +83,7 @@ export function NoticiaFormModal({ open, onClose, onSubmit, noticia }: NoticiaFo
           titulo,
           descripcion_corta: descripcionCorta,
           contenido,
+          link,
           fecha_publicacion: fechaPublicacionISO,
           activo,
         }
@@ -141,6 +148,17 @@ export function NoticiaFormModal({ open, onClose, onSubmit, noticia }: NoticiaFo
               onChange={(e) => setContenido(e.target.value)}
               placeholder="Contenido completo de la noticia"
               rows={6}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contenido">Link</Label>
+            <Input
+              id="link"
+              type="text"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              placeholder="Link de la noticia"
               required
             />
           </div>

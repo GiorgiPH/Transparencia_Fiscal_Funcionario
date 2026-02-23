@@ -2,6 +2,15 @@ export type DocumentType = "Excel" | "PDF" | "Word" | "CSV" | "JSON" | "XML"
 export type Periodicity = "Anual" | "Mensual" | "Semestral" | "Trimestral"
 export type DocumentStatus = "publicado" | "pendiente" | "rechazado"
 
+// Periodicidad del catálogo
+export interface Periodicidad {
+  id: number
+  nombre: string
+  mesesPorPeriodo: number
+  periodosPorAnio: number
+  activo: boolean
+}
+
 // Tipos de documento del catálogo
 export interface TipoDocumento {
   id: number

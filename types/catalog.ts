@@ -76,7 +76,7 @@ export interface Documento {
   fecha_publicacion: string
   activo: boolean
   institucion_emisora: string
-  periodicidad: string
+  periodicidad_id: number
   fecha_creacion: string
   fecha_modificacion: string
   usuario_creacion_id: number
@@ -89,7 +89,7 @@ export interface Document {
   id: string
   nombre: string
   tipo: DocumentType
-  periodicidad: Periodicity
+  periodicidad_id: Periodicity
   categoria: string
   subcategoria: string
   archivo?: File
@@ -124,7 +124,7 @@ export interface CatalogoTreeItem extends Catalogo {
 export interface DocumentoCreateData {
   catalogo_id: number
   tipo_documento_id: number
-  periodicidad: string
+  periodicidad_id: string
   archivo: File
   nombre?: string
   descripcion?: string
@@ -135,7 +135,7 @@ export interface DocumentoCreateData {
 export interface DocumentoUpdateData {
   catalogo_id?: number
   tipo_documento_id?: number
-  periodicidad?: string
+  periodicidad_id?: string
   archivo?: File
   nombre?: string
   descripcion?: string
@@ -143,12 +143,3 @@ export interface DocumentoUpdateData {
   institucion_emisora?: string
 }
 
-export const THEMATIC_CATEGORIES: string[] = [
-  "Plan Estatal de Desarrollo",
-  "Ingresos",
-  "Deuda Pública",
-  "Presupuesto de Egresos",
-  "Información Contable",
-  "Rendición de Cuentas",
-  "Marco Normativo",
-]

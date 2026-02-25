@@ -12,7 +12,7 @@ import { useState } from "react"
 
 export default function CatalogosPage() {
   const { user } = useAuth()
-  const { rootCatalogs, isLoading, refreshCatalogo } = useCatalogs()
+  const { rootCatalogs, isLoading, refreshCatalogo, estadisticas } = useCatalogs()
   const [isEditMode, setIsEditMode] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
 
@@ -107,20 +107,144 @@ export default function CatalogosPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-gray-900">{rootCatalogs.length}</div>
-            <div className="text-sm text-gray-600">Categorías principales</div>
-          </div>
-          <div className="bg-green-50 rounded-lg p-4">
-            <div className="text-2xl font-bold text-green-700">
-              {rootCatalogs.filter(c => c.activo).length}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-card border rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-foreground">
+                  {estadisticas?.totalCatalogos || 0}
+                </div>
+                <div className="text-sm text-muted-foreground">Total catálogos</div>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
             </div>
-            <div className="text-sm text-green-600">Activas</div>
           </div>
-          <div className={`rounded-lg p-4 ${isEditMode ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50'}`}>
-            <div className="text-2xl font-bold text-yellow-700">{isEditMode ? 'ACTIVO' : 'INACTIVO'}</div>
-            <div className="text-sm text-yellow-600">Modo edición</div>
+          
+          <div className="bg-card border rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-foreground">
+                  {estadisticas?.totalDocumentos || 0}
+                </div>
+                <div className="text-sm text-muted-foreground">Documentos subidos</div>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                <svg className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-card border rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-foreground">
+                  {estadisticas?.catalogosRaiz || 0}
+                </div>
+                <div className="text-sm text-muted-foreground">Categorías raíz</div>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <svg className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-card border rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-foreground">
+                  {estadisticas?.catalogosConDocumentos || 0}
+                </div>
+                <div className="text-sm text-muted-foreground">Catálogos con docs</div>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <svg className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Estadísticas detalladas por niveles */}
+        <div className="bg-card border rounded-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">Distribución por niveles</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Nivel 0 (Raíz)</span>
+                <span className="font-medium">{estadisticas?.catalogosNivel0 || 0}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-500 h-2 rounded-full" 
+                  style={{ width: `${estadisticas ? (estadisticas.catalogosNivel0 / estadisticas.totalCatalogos * 100) : 0}%` }}
+                ></div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Nivel 1</span>
+                <span className="font-medium">{estadisticas?.catalogosNivel1 || 0}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full" 
+                  style={{ width: `${estadisticas ? (estadisticas.catalogosNivel1 / estadisticas.totalCatalogos * 100) : 0}%` }}
+                ></div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Nivel 2</span>
+                <span className="font-medium">{estadisticas?.catalogosNivel2 || 0}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-purple-500 h-2 rounded-full" 
+                  style={{ width: `${estadisticas ? (estadisticas.catalogosNivel2 / estadisticas.totalCatalogos * 100) : 0}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 pt-6 border-t">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Con permiso para documentos</span>
+                  <span className="font-medium">{estadisticas?.catalogosConPermisoDocumentos || 0}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-amber-500 h-2 rounded-full" 
+                    style={{ width: `${estadisticas ? (estadisticas.catalogosConPermisoDocumentos / estadisticas.totalCatalogos * 100) : 0}%` }}
+                  ></div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Con documentos subidos</span>
+                  <span className="font-medium">{estadisticas?.catalogosConDocumentos || 0}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-emerald-500 h-2 rounded-full" 
+                    style={{ width: `${estadisticas ? (estadisticas.catalogosConDocumentos / estadisticas.totalCatalogos * 100) : 0}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

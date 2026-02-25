@@ -288,6 +288,18 @@ export interface DocumentAvailabilityResponse {
   disponibilidadTiposDocumento: any[]
 }
 
+// Tipo para estadísticas de catálogos
+export interface EstadisticasCatalogos {
+  totalCatalogos: number
+  totalDocumentos: number
+  catalogosNivel0: number
+  catalogosNivel1: number
+  catalogosNivel2: number
+  catalogosConPermisoDocumentos: number
+  catalogosRaiz: number
+  catalogosConDocumentos: number
+}
+
 export const catalogService = {
   // Obtener catálogos raíz
   async getRootCatalogs(): Promise<Catalogo[]> {
@@ -310,18 +322,7 @@ export const catalogService = {
     return apiClient.get<Catalogo>(`/admin/catalogos/${catalogId}`)
   },
 
-  // Obtener catálogo con todos sus hijos anidados
-  async getCatalogWithChildren(catalogId: number): Promise<CatalogoWithChildren> {
-    return withMockFallback(
-      () => apiClient.get<CatalogoWithChildren>(`/admin/catalogos/${catalogId}/with-children`),
-      // Mock data para desarrollo
-      {
-        ...mockRootCatalogs[0],
-        children: mockCatalogChildren[1] || [],
-        disponibilidadTiposDocumento: mockCatalogChildren[1]?.[0]?.disponibilidadTiposDocumento || []
-      }
-    )
-  },
+ 
 
   // Obtener disponibilidad de documentos de un catálogo
   async getDocumentAvailability(catalogId: number): Promise<DocumentAvailabilityResponse> {
@@ -399,16 +400,26 @@ export const catalogService = {
 
   // Obtener periodicidades
   async getPeriodicidades(): Promise<Periodicidad[]> {
+    const response = await apiClient.get<Periodicidad[]>("/admin/catalogos/periodicidades");
+    return response;
+  },
+
+  // Obtener estadísticas de catálogos
+  async getEstadisticas(): Promise<EstadisticasCatalogos> {
     return withMockFallback(
-      () => apiClient.get<Periodicidad[]>("/admin/catalogos/periodicidades"),
+      () => apiClient.get<EstadisticasCatalogos>("/admin/catalogos/estadisticas/total"),
       // Mock data para desarrollo
-      [
-        { id: 1, nombre: "Anual", mesesPorPeriodo: 12, periodosPorAnio: 1, activo: true },
-        { id: 2, nombre: "Semestral", mesesPorPeriodo: 6, periodosPorAnio: 2, activo: true },
-        { id: 3, nombre: "Trimestral", mesesPorPeriodo: 3, periodosPorAnio: 4, activo: true },
-        { id: 4, nombre: "Mensual", mesesPorPeriodo: 1, periodosPorAnio: 12, activo: true },
-      ]
-    )
+      {
+        totalCatalogos: 150,
+        totalDocumentos: 1250,
+        catalogosNivel0: 10,
+        catalogosNivel1: 45,
+        catalogosNivel2: 95,
+        catalogosConPermisoDocumentos: 120,
+        catalogosRaiz: 10,
+        catalogosConDocumentos: 85,
+      }
+    );
   },
 
   // Métodos legacy para compatibilidad

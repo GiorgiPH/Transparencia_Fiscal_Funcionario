@@ -1,22 +1,27 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { catalogService, type CreateCatalogoData, type UpdateCatalogoData } from "@/services/catalogService"
-import type { Catalogo, Documento, TipoDocumento, CatalogoTreeItem } from "@/types/catalog"
+import { catalogService, type CreateCatalogoData, type UpdateCatalogoData, type EstadisticasCatalogos } from "@/services/catalogService"
+import type { Catalogo, Documento, TipoDocumento, CatalogoTreeItem, Periodicidad } from "@/types/catalog"
 import { useCrudNotifications } from "./useNotifications"
 
 export function useCatalogs() {
   const [rootCatalogs, setRootCatalogs] = useState<Catalogo[]>([])
   const [catalogosTree, setCatalogosTree] = useState<CatalogoTreeItem[]>([])
+  const [estadisticas, setEstadisticas] = useState<EstadisticasCatalogos | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingEstadisticas, setIsLoadingEstadisticas] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [documentTypes, setDocumentTypes] = useState<TipoDocumento[]>([])
+  const [periodicidades, setPeriodicidades] = useState<Periodicidad[]>([])
   const notifications = useCrudNotifications("Catálogo")
 
   useEffect(() => {
     loadRootCatalogs()
     loadDocumentTypes()
+    loadPeriodicidades()
     fetchCatalogoTree()
+    loadEstadisticas()
   }, [])
 
   const loadRootCatalogs = async () => {
@@ -38,6 +43,27 @@ export function useCatalogs() {
       setDocumentTypes(data)
     } catch (err) {
       console.error("Error al cargar tipos de documento:", err)
+    }
+  }
+
+  const loadPeriodicidades = async () => {
+    try {
+      const data = await catalogService.getPeriodicidades()
+      setPeriodicidades(data)
+    } catch (err) {
+      console.error("Error al cargar periodicidades:", err)
+    }
+  }
+
+  const loadEstadisticas = async () => {
+    try {
+      setIsLoadingEstadisticas(true)
+      const data = await catalogService.getEstadisticas()
+      setEstadisticas(data)
+    } catch (err) {
+      console.error("Error al cargar estadísticas:", err)
+    } finally {
+      setIsLoadingEstadisticas(false)
     }
   }
 
@@ -222,33 +248,7 @@ export function useCatalogs() {
     }
   }
 
-  // Nuevos métodos para refresco específico
-  const refreshCatalogoEspecifico = async (catalogId: number): Promise<any> => {
-    try {
-      // Usar el nuevo endpoint que obtiene el catálogo con todos sus hijos
-      const catalogoActualizado = await catalogService.getCatalogWithChildren(catalogId)
-      
-      // Actualizar el árbol con la nueva estructura
-      updateTreeItem(catalogId, {
-        ...catalogoActualizado,
-        children: catalogoActualizado.children?.map(child => ({
-          ...child,
-          children: child.children || [],
-          isExpanded: false,
-          isLoading: false,
-          hasChildren: (child._count?.children || 0) > 0
-        })) || [],
-        isExpanded: true,
-        isLoading: false
-      })
-      
-      return catalogoActualizado
-    } catch (err) {
-      console.error("Error al refrescar catálogo específico:", err)
-      throw err
-    }
-  }
-
+  
   const refreshDisponibilidadDocumentos = async (catalogId: number): Promise<any> => {
     try {
       // Usar el nuevo endpoint que obtiene solo la disponibilidad de documentos
@@ -289,56 +289,6 @@ export function useCatalogs() {
     })
   }
 
-  const mockFetchCatalogosRaices = async (): Promise<void> => {
-    // Datos mock para desarrollo
-    const mockData: CatalogoTreeItem[] = [
-      {
-        id: 1,
-        nombre: "PLAN ESTATAL DE DESARROLLO",
-        descripcion: "Planes Estatales de Desarrollo y programas derivados",
-        descripcion_nivel: null,
-        icono: "FileText",
-        parent_id: null,
-        nivel: 1,
-        orden: 1,
-        activo: true,
-        permite_documentos: false,
-        fecha_creacion: "2025-12-30T12:46:50.193Z",
-        fecha_modificacion: "2025-12-30T12:46:50.193Z",
-        usuario_creacion_id: 1,
-        usuario_modif_id: null,
-        _count: { children: 5, documentos: 0 },
-        children: [],
-        isExpanded: false,
-        isLoading: false,
-        hasChildren: true
-      },
-      {
-        id: 2,
-        nombre: "INGRESOS",
-        descripcion: "Proyección, estimación y resultados de ingresos",
-        descripcion_nivel: null,
-        icono: "DollarSign",
-        parent_id: null,
-        nivel: 1,
-        orden: 2,
-        activo: true,
-        permite_documentos: false,
-        fecha_creacion: "2025-12-30T12:46:50.193Z",
-        fecha_modificacion: "2025-12-30T12:46:50.193Z",
-        usuario_creacion_id: 1,
-        usuario_modif_id: null,
-        _count: { children: 5, documentos: 0 },
-        children: [],
-        isExpanded: false,
-        isLoading: false,
-        hasChildren: true
-      }
-    ]
-    
-    setCatalogosTree(mockData)
-    setIsLoading(false)
-  }
   const clearError = () => {
     setError(null)
   }
@@ -346,6 +296,10 @@ export function useCatalogs() {
   // Alias para compatibilidad con componentes existentes
   const fetchTiposDocumento = async (): Promise<void> => {
     await loadDocumentTypes()
+  }
+
+  const fetchPeriodicidades = async (): Promise<void> => {
+    await loadPeriodicidades()
   }
 
   const fetchDocumento = async (documentId: number): Promise<Documento> => {
@@ -406,6 +360,8 @@ export function useCatalogs() {
     rootCatalogs,
     documentTypes,
     catalogosTree,
+    estadisticas,
+    isLoadingEstadisticas,
     loadCatalogChildren,
     loadDocument,
     createDocument,
@@ -415,7 +371,6 @@ export function useCatalogs() {
     expandCatalogo,
     collapseCatalogo,
     refreshCatalogo,
-    mockFetchCatalogosRaices,
     clearError,
     
     // Métodos CRUD para catálogos
@@ -425,13 +380,17 @@ export function useCatalogs() {
     deleteCatalog,
     
     // Nuevos métodos para refresco específico
-    refreshCatalogoEspecifico,
     refreshDisponibilidadDocumentos,
+    
+    // Métodos para estadísticas
+    loadEstadisticas,
     
     // Alias para compatibilidad
     fetchTiposDocumento,
+    fetchPeriodicidades,
     fetchDocumento,
     tiposDocumento: documentTypes,
+    periodicidades,
     
     // Métodos legacy
     categories: rootCatalogs.map(catalog => ({

@@ -29,7 +29,7 @@ export function DocumentoModal({
   documentoId,
   tipoDocumentoId
 }: DocumentoModalProps) {
-  const { fetchTiposDocumento, tiposDocumento, fetchDocumento } = useCatalogs()
+  const { fetchTiposDocumento, tiposDocumento, fetchDocumento, fetchPeriodicidades, periodicidades } = useCatalogs()
   
   const [formData, setFormData] = useState({
     tipo_documento_id: '',
@@ -47,20 +47,18 @@ export function DocumentoModal({
 
   useEffect(() => {
     if (isOpen) {
-      console.log("DEBUG: Modal abierto, tipoDocumentoId prop:", tipoDocumentoId)
-      console.log("DEBUG: Mode:", mode)
+
       loadTiposDocumento()
+      loadPeriodicidadesFromApi()
       if (mode === 'edit' && documentoId) {
         loadDocumento(documentoId)
       } else if (mode === 'create' && tipoDocumentoId !== null && tipoDocumentoId !== undefined) {
         setTimeout(() => {
-          console.log("DEBUG: Setting formData.tipo_documento_id to:", tipoDocumentoId.toString())
         setFormData(prev => {
           const newFormData = {
             ...prev,
             tipo_documento_id: tipoDocumentoId.toString()
           }
-          console.log("DEBUG: New formData after set:", newFormData)
           return newFormData
         })
         }, 1000);
@@ -96,11 +94,17 @@ export function DocumentoModal({
 
   const loadTiposDocumento = async () => {
     try {
-      console.log("DEBUG: Cargando tipos de documento...")
       await fetchTiposDocumento()
-      console.log("DEBUG: tiposDocumento después de fetch:", tiposDocumento)
     } catch (err) {
       setError('Error al cargar tipos de documento')
+    }
+  }
+
+  const loadPeriodicidadesFromApi = async () => {
+    try {
+      await fetchPeriodicidades()
+    } catch (err) {
+      setError('Error al cargar periodicidades')
     }
   }
 
@@ -108,10 +112,9 @@ export function DocumentoModal({
     setIsLoadingDocumento(true)
     try {
       const documento = await fetchDocumento(id)
-      console.log(documento);
       setFormData({
         tipo_documento_id: documento.tipo_documento_id.toString(),
-        periodicidad: documento.periodicidad,
+        periodicidad: documento.periodicidad_id.toString(),
         archivo: null,
         nombre: documento.nombre,
         descripcion: documento.descripcion,
@@ -173,7 +176,7 @@ export function DocumentoModal({
         submitData.archivo = formData.archivo
       }
 
-      if ( formData.nombre) {
+      if (formData.nombre) {
         submitData.nombre = formData.nombre
       }
 
@@ -227,14 +230,11 @@ export function DocumentoModal({
     return extensionesArray.join(',');
   };
 
-  const periodicidades = [
-    { value: 'anual', label: 'Anual' },
-    { value: 'semestral', label: 'Semestral' },
-    { value: 'trimestral', label: 'Trimestral' },
-    { value: 'mensual', label: 'Mensual' },
-    { value: 'bimestral', label: 'Bimestral' },
-    { value: 'cuatrimestral', label: 'Cuatrimestral' },
-  ]
+  // Convertir periodicidades del backend al formato que espera el Select
+  const periodicidadesOptions = periodicidades.map(p => ({
+    value: p.id.toString(),
+    label: p.nombre
+  }))
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -318,12 +318,12 @@ export function DocumentoModal({
               <SelectTrigger>
                 <SelectValue placeholder="Seleccione periodicidad">
                   {formData.periodicidad 
-                    ? periodicidades.find(p => p.value === formData.periodicidad)?.label
+                    ? periodicidadesOptions.find(p => p.value === formData.periodicidad)?.label
                     : 'Seleccione periodicidad'}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {periodicidades.map((periodicidad) => (
+                {periodicidadesOptions.map((periodicidad) => (
                   <SelectItem key={periodicidad.value} value={periodicidad.value}>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />

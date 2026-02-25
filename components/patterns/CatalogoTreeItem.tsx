@@ -53,7 +53,7 @@ export function  CatalogoTreeItem({
   const [selectedDocumentoId, setSelectedDocumentoId] = useState<number | null>(null);
 
   
-  const { createDocument, updateDocument, deleteDocument, createCatalog, updateCatalog, deleteCatalog, refreshCatalogoEspecifico, refreshDisponibilidadDocumentos } = useCatalogs();
+  const { createDocument, updateDocument, deleteDocument, createCatalog, updateCatalog, deleteCatalog, refreshDisponibilidadDocumentos } = useCatalogs();
   
   const hasChildren = (item.children && item.children.length > 0) || 
                      (item._count?.children && item._count.children > 0) ||

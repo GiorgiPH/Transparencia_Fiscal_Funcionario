@@ -106,6 +106,40 @@ export function useNotifications() {
     return swal.toast(message, type)
   }
 
+  /**
+   * Notificación de reset de formulario
+   */
+  const formReset = (formName: string) => {
+    swal.info('Formulario reiniciado', `El formulario "${formName}" ha sido reiniciado a sus valores iniciales.`)
+  }
+
+  /**
+   * Notificación de éxito en formulario
+   */
+  const formSuccess = (action: string, formName: string) => {
+    swal.success('Operación exitosa', `El formulario "${formName}" ha sido ${action} correctamente.`)
+  }
+
+  /**
+   * Notificación de error en formulario
+   */
+  const formError = (action: string, formName: string, errorMessage?: string) => {
+    const message = errorMessage 
+      ? `Error al ${action} el formulario "${formName}": ${errorMessage}`
+      : `Error al ${action} el formulario "${formName}"`
+    swal.error('Error en formulario', message)
+  }
+
+  /**
+   * Notificación de error de validación en formulario
+   */
+  const formValidationError = (errorMessages: string[]) => {
+    const message = errorMessages.length === 1 
+      ? errorMessages[0]
+      : `Se encontraron ${errorMessages.length} errores de validación:\n\n• ${errorMessages.join('\n• ')}`
+    swal.error('Errores de validación', message)
+  }
+
   return {
     // Métodos básicos
     showSuccess,
@@ -120,6 +154,12 @@ export function useNotifications() {
     confirmAction,
     withLoading,
     toast,
+    
+    // Métodos para formularios
+    formReset,
+    formSuccess,
+    formError,
+    formValidationError,
     
     // Métodos directos de swal (para casos avanzados)
     fire: swal.fire,

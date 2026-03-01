@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ApiRole, CreateUserData, UpdateUserData, User } from "@/types/auth"
 import type { Dependencia } from "@/types/dependencia"
-import DependenciaService from "@/services/dependenciaService"
+import { useDependencias } from "@/hooks/useDependencias"
 
 interface UserFormModalProps {
   open: boolean
@@ -33,28 +33,27 @@ export function UserFormModal({ open, onClose, onSubmit, user, roles }: UserForm
   const [password, setPassword] = useState("")
   const [profileFile, setProfileFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [dependencias, setDependencias] = useState<Dependencia[]>([])
-  const [isLoadingDependencias, setIsLoadingDependencias] = useState(false)
+  
+  const { 
+    dependencias, 
+    isLoading: isLoadingDependencias, 
+    fetchDependenciasForUserSelection 
+  } = useDependencias()
 
   // Cargar dependencias cuando se abre el modal
   useEffect(() => {
     const loadDependencias = async () => {
       if (open) {
-        setIsLoadingDependencias(true)
-        
         try {
-          const dependenciasData = await DependenciaService.getDependenciasForUserSelection()
-          setDependencias(dependenciasData)
+          await fetchDependenciasForUserSelection()
         } catch (error) {
           console.error("Error al cargar dependencias:", error)
-        } finally {
-          setIsLoadingDependencias(false)
         }
       }
     }
 
     loadDependencias()
-  }, [open])
+  }, [open, fetchDependenciasForUserSelection])
 
   // Establecer valores del usuario cuando se abre el modal y las dependencias están cargadas
   useEffect(() => {

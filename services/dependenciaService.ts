@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api/axios-client'
+import { apiClient, type ApiResponse } from '@/lib/api/axios-client'
 import type { Dependencia, TipoDependencia, DependenciaTree, DependenciasByLevel, DependenciaStats } from '@/types/dependencia'
 
 export class DependenciaService {
@@ -75,66 +75,9 @@ export class DependenciaService {
     }
   }
 
-  /**
-   * Obtener dependencias agrupadas por nivel
-   */
-  static async getDependenciasByLevel(): Promise<DependenciasByLevel> {
-    try {
-      return await apiClient.get<DependenciasByLevel>('/admin/dependencias/niveles/todos')
-    } catch (error) {
-      console.error('Error al obtener dependencias por nivel:', error)
-      throw error
-    }
-  }
 
-  /**
-   * Obtener estadísticas de dependencias
-   */
-  static async getDependenciasStats(): Promise<DependenciaStats> {
-    try {
-      return await apiClient.get<DependenciaStats>('/admin/dependencias/estadisticas/conteo')
-    } catch (error) {
-      console.error('Error al obtener estadísticas de dependencias:', error)
-      throw error
-    }
-  }
 
-  /**
-   * Validar si una dependencia existe
-   */
-  static async validateDependenciaExists(id: number): Promise<boolean> {
-    try {
-      const response = await apiClient.get<{ existe: boolean }>(`/admin/dependencias/validar/existe/${id}`)
-      return response.existe
-    } catch (error) {
-      console.error(`Error al validar dependencia con ID ${id}:`, error)
-      return false
-    }
-  }
 
-  /**
-   * Obtener dependencias con ruta completa
-   */
-  static async getDependenciasWithFullPath(): Promise<Dependencia[]> {
-    try {
-      return await apiClient.get<Dependencia[]>('/admin/dependencias/ruta/completa')
-    } catch (error) {
-      console.error('Error al obtener dependencias con ruta completa:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Obtener estructura completa de dependencias
-   */
-  static async getDependenciaStructure(): Promise<any> {
-    try {
-      return await apiClient.get<any>('/admin/dependencias/estructura/completa')
-    } catch (error) {
-      console.error('Error al obtener estructura completa de dependencias:', error)
-      throw error
-    }
-  }
 }
 
 export default DependenciaService

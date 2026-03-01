@@ -1,16 +1,14 @@
 "use client"
 
-import { toast as shadcnToast } from "@/hooks/use-toast"
-import { toast as sonnerToast } from "sonner"
+import { useSwal } from "@/lib/swal"
 
-export type NotificationType = "success" | "error" | "warning" | "info"
-export type NotificationPosition = "top-right" | "top-center" | "top-left" | "bottom-right" | "bottom-center" | "bottom-left"
-
+/**
+ * Opciones para notificaciones
+ */
 export interface NotificationOptions {
   title?: string
   description?: string
   duration?: number
-  position?: NotificationPosition
   showIcon?: boolean
   showCloseButton?: boolean
   action?: {
@@ -19,200 +17,114 @@ export interface NotificationOptions {
   }
 }
 
-export interface NotificationHook {
-  showNotification: (type: NotificationType, message: string, options?: NotificationOptions) => void
-  showSuccess: (message: string, options?: NotificationOptions) => void
-  showError: (message: string, options?: NotificationOptions) => void
-  showWarning: (message: string, options?: NotificationOptions) => void
-  showInfo: (message: string, options?: NotificationOptions) => void
-  showLoading: (message: string, options?: NotificationOptions) => string | number
-  dismissNotification: (id: string | number) => void
-  dismissAllNotifications: () => void
-}
+/**
+ * Hook para notificaciones usando SweetAlert2
+ */
+export function useNotifications() {
+  const swal = useSwal()
 
-export function useNotifications(): NotificationHook {
-  // Usar Sonner para notificaciones más modernas y ricas
-  const showNotification = (type: NotificationType, message: string, options?: NotificationOptions) => {
-    const { title, description, duration = 5000, action } = options || {}
-
-    switch (type) {
-      case "success":
-        sonnerToast.success(title || message, {
-          description: description || (title ? message : undefined),
-          duration,
-          action: action ? {
-            label: action.label,
-            onClick: action.onClick,
-          } : undefined,
-        })
-        break
-      case "error":
-        sonnerToast.error(title || message, {
-          description: description || (title ? message : undefined),
-          duration,
-          action: action ? {
-            label: action.label,
-            onClick: action.onClick,
-          } : undefined,
-        })
-        break
-      case "warning":
-        sonnerToast.warning(title || message, {
-          description: description || (title ? message : undefined),
-          duration,
-          action: action ? {
-            label: action.label,
-            onClick: action.onClick,
-          } : undefined,
-        })
-        break
-      case "info":
-        sonnerToast.info(title || message, {
-          description: description || (title ? message : undefined),
-          duration,
-          action: action ? {
-            label: action.label,
-            onClick: action.onClick,
-          } : undefined,
-        })
-        break
-    }
-  }
-
+  /**
+   * Muestra una notificación de éxito
+   */
   const showSuccess = (message: string, options?: NotificationOptions) => {
-    showNotification("success", message, options)
-  }
-
-  const showError = (message: string, options?: NotificationOptions) => {
-    showNotification("error", message, options)
-  }
-
-  const showWarning = (message: string, options?: NotificationOptions) => {
-    showNotification("warning", message, options)
-  }
-
-  const showInfo = (message: string, options?: NotificationOptions) => {
-    showNotification("info", message, options)
-  }
-
-  const showLoading = (message: string, options?: NotificationOptions): string | number => {
     const { title, description } = options || {}
-    return sonnerToast.loading(title || message, {
-      description: description || (title ? message : undefined),
-    })
+    swal.success(title || message, description || (title ? message : undefined))
   }
 
-  const dismissNotification = (id: string | number) => {
-    sonnerToast.dismiss(id)
+  /**
+   * Muestra una notificación de error
+   */
+  const showError = (message: string, options?: NotificationOptions) => {
+    const { title, description } = options || {}
+    swal.error(title || message, description || (title ? message : undefined))
   }
 
-  const dismissAllNotifications = () => {
-    sonnerToast.dismiss()
+  /**
+   * Muestra una notificación de advertencia
+   */
+  const showWarning = (message: string, options?: NotificationOptions) => {
+    const { title, description } = options || {}
+    swal.warning(title || message, description || (title ? message : undefined))
   }
 
-  // Método alternativo usando ShadCN Toast (mantener compatibilidad)
-  const showShadcnNotification = (type: NotificationType, message: string, options?: NotificationOptions) => {
-    const { title, description, duration = 5000 } = options || {}
-    
-    shadcnToast({
-      variant: type === "error" ? "destructive" : "default",
-      title: title || message,
-      description: description || (title ? message : undefined),
-      duration,
-    })
+  /**
+   * Muestra una notificación de información
+   */
+  const showInfo = (message: string, options?: NotificationOptions) => {
+    const { title, description } = options || {}
+    swal.info(title || message, description || (title ? message : undefined))
+  }
+
+  /**
+   * Muestra una notificación de carga
+   */
+  const showLoading = (message: string, options?: NotificationOptions): void => {
+    const { title, description } = options || {}
+    swal.loading(title || message, description || (title ? message : undefined))
+  }
+
+  /**
+   * Cierra la notificación actual
+   */
+  const dismissNotification = () => {
+    swal.close()
+  }
+
+  /**
+   * Confirma la eliminación de un recurso
+   */
+  const confirmDelete = async (resourceName: string, customMessage?: string): Promise<boolean> => {
+    return swal.confirmDelete(resourceName, customMessage)
+  }
+
+  /**
+   * Confirma una acción con opciones personalizadas
+   */
+  const confirmAction = async (
+    title: string,
+    text: string,
+    confirmText: string = 'Confirmar',
+    cancelText: string = 'Cancelar'
+  ): Promise<boolean> => {
+    return swal.confirmAction(title, text, confirmText, cancelText)
+  }
+
+  /**
+   * Ejecuta una operación con loading
+   */
+  const withLoading = async <T>(
+    operation: () => Promise<T>,
+    loadingMessage: string = "Procesando..."
+  ): Promise<T> => {
+    return swal.withLoading(operation, loadingMessage)
+  }
+
+  /**
+   * Muestra un toast (notificación pequeña)
+   */
+  const toast = async (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    return swal.toast(message, type)
   }
 
   return {
-    showNotification,
+    // Métodos básicos
     showSuccess,
     showError,
     showWarning,
     showInfo,
     showLoading,
     dismissNotification,
-    dismissAllNotifications,
-  }
-}
-
-// Hook simplificado para operaciones CRUD comunes
-export function useCrudNotifications(resourceName: string) {
-  const notifications = useNotifications()
-  const { showSuccess, showError, showLoading, dismissNotification } = notifications
-
-  const showCreateSuccess = () => {
-    showSuccess(`${resourceName} creado exitosamente`)
-  }
-
-  const showCreateError = (error?: string) => {
-    showError(`Error al crear ${resourceName.toLowerCase()}`, {
-      description: error || "Por favor, intente nuevamente",
-    })
-  }
-
-  const showUpdateSuccess = () => {
-    showSuccess(`${resourceName} actualizado exitosamente`)
-  }
-
-  const showUpdateError = (error?: string) => {
-    showError(`Error al actualizar ${resourceName.toLowerCase()}`, {
-      description: error || "Por favor, intente nuevamente",
-    })
-  }
-
-  const showDeleteSuccess = () => {
-    showSuccess(`${resourceName} eliminado exitosamente`)
-  }
-
-  const showDeleteError = (error?: string) => {
-    showError(`Error al eliminar ${resourceName.toLowerCase()}`, {
-      description: error || "Por favor, intente nuevamente",
-    })
-  }
-
-  const showFetchSuccess = () => {
-    showSuccess(`${resourceName}s cargados exitosamente`)
-  }
-
-  const showFetchError = (error?: string) => {
-    showError(`Error al cargar ${resourceName.toLowerCase()}s`, {
-      description: error || "Por favor, intente nuevamente",
-    })
-  }
-
-  const withLoading = async <T>(
-    operation: () => Promise<T>,
-    loadingMessage: string = "Procesando..."
-  ): Promise<T> => {
-    const loadingId = showLoading(loadingMessage)
-    try {
-      const result = await operation()
-      dismissNotification(loadingId)
-      return result
-    } catch (error) {
-      dismissNotification(loadingId)
-      throw error
-    }
-  }
-
-  return {
-    // Métodos CRUD específicos
-    showCreateSuccess,
-    showCreateError,
-    showUpdateSuccess,
-    showUpdateError,
-    showDeleteSuccess,
-    showDeleteError,
-    showFetchSuccess,
-    showFetchError,
-    withLoading,
     
-    // Métodos básicos expuestos
-    showSuccess: notifications.showSuccess,
-    showError: notifications.showError,
-    showWarning: notifications.showWarning,
-    showInfo: notifications.showInfo,
-    showLoading: notifications.showLoading,
-    dismissNotification: notifications.dismissNotification,
-    dismissAllNotifications: notifications.dismissAllNotifications,
+    // Métodos específicos
+    confirmDelete,
+    confirmAction,
+    withLoading,
+    toast,
+    
+    // Métodos directos de swal (para casos avanzados)
+    fire: swal.fire,
+    question: swal.question,
   }
 }
+
+export default useNotifications

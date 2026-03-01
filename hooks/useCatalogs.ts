@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { catalogService, type CreateCatalogoData, type UpdateCatalogoData, type EstadisticasCatalogos } from "@/services/catalogService"
 import type { Catalogo, Documento, TipoDocumento, CatalogoTreeItem, Periodicidad } from "@/types/catalog"
-import { useCrudNotifications } from "./useNotifications"
+import { useNotifications } from "./useNotifications"
 
 export function useCatalogs() {
   const [rootCatalogs, setRootCatalogs] = useState<Catalogo[]>([])
@@ -14,7 +14,7 @@ export function useCatalogs() {
   const [error, setError] = useState<string | null>(null)
   const [documentTypes, setDocumentTypes] = useState<TipoDocumento[]>([])
   const [periodicidades, setPeriodicidades] = useState<Periodicidad[]>([])
-  const notifications = useCrudNotifications("Catálogo")
+  const notifications = useNotifications()
 
   useEffect(() => {
     loadRootCatalogs()
@@ -100,11 +100,13 @@ export function useCatalogs() {
   const createCatalog = async (data: CreateCatalogoData): Promise<Catalogo | null> => {
     try {
       const result = await catalogService.createCatalog(data)
-      notifications.showCreateSuccess()
+      notifications.showSuccess("Catálogo creado exitosamente")
       return result
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Error al crear catálogo"
-      notifications.showCreateError(errorMessage)
+      notifications.showError("Error al crear catálogo", {
+        description: errorMessage,
+      })
       console.error("Error al crear catálogo:", err)
       return null
     }
@@ -113,11 +115,13 @@ export function useCatalogs() {
   const updateCatalog = async (catalogId: number, data: UpdateCatalogoData): Promise<Catalogo | null> => {
     try {
       const result = await catalogService.updateCatalog(catalogId, data)
-      notifications.showUpdateSuccess()
+      notifications.showSuccess("Catálogo actualizado exitosamente")
       return result
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Error al actualizar catálogo"
-      notifications.showUpdateError(errorMessage)
+      notifications.showError("Error al actualizar catálogo", {
+        description: errorMessage,
+      })
       console.error("Error al actualizar catálogo:", err)
       return null
     }
@@ -126,11 +130,13 @@ export function useCatalogs() {
   const deleteCatalog = async (catalogId: number): Promise<boolean> => {
     try {
       await catalogService.deleteCatalog(catalogId)
-      notifications.showDeleteSuccess()
+      notifications.showSuccess("Catálogo eliminado exitosamente")
       return true
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || "Error al eliminar catálogo"
-      notifications.showDeleteError(errorMessage)
+      notifications.showError("Error al eliminar catálogo", {
+        description: errorMessage,
+      })
       console.error("Error al eliminar catálogo:", err)
       return false
     }

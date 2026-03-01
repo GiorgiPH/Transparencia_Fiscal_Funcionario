@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { userService } from '@/services/userService';
 import type { User, UpdateProfileData, ApiRole, CreateUserData, UpdateUserData } from '@/types/auth';
-import { useCrudNotifications } from './useNotifications';
+import { useNotifications } from './useNotifications';
 
 export function useUsers() {
   const [users, setUsers] = useState<User[]>([]);
@@ -12,7 +12,7 @@ export function useUsers() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const notifications = useCrudNotifications("Usuario");
+  const notifications = useNotifications();
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -20,12 +20,12 @@ export function useUsers() {
     try {
       const data = await userService.getAdminUsers();
       setUsers(data);
-      notifications.showFetchSuccess();
+      notifications.showSuccess('Usuarios cargados exitosamente');
       return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cargar usuarios';
       setError(message);
-      notifications.showFetchError(message);
+      notifications.showError('Error al cargar usuarios', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -82,13 +82,13 @@ export function useUsers() {
         setCurrentUser(updatedUser);
       }
 
-      notifications.showUpdateSuccess();
+      notifications.showSuccess('Perfil de usuario actualizado exitosamente');
       
       return updatedUser;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar perfil';
       setError(message);
-      notifications.showUpdateError(message);
+      notifications.showError('Error al actualizar perfil', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -101,12 +101,12 @@ export function useUsers() {
     try {
       const updatedUser = await userService.updateCurrentProfile(data);
       setCurrentUser(updatedUser);
-      notifications.showUpdateSuccess();
+      notifications.showSuccess('Perfil actualizado exitosamente');
       return updatedUser;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar perfil';
       setError(message);
-      notifications.showUpdateError(message);
+      notifications.showError('Error al actualizar perfil', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -156,12 +156,12 @@ export function useUsers() {
     try {
       const newUser = await userService.createAdminUser(data, file);
       setUsers(prevUsers => [...prevUsers, newUser]);
-      notifications.showCreateSuccess();
+      notifications.showSuccess('Usuario creado exitosamente');
       return newUser;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear usuario';
       setError(message);
-      notifications.showCreateError(message);
+      notifications.showError('Error al crear usuario', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -186,13 +186,13 @@ export function useUsers() {
         setCurrentUser(updatedUser);
       }
 
-      notifications.showUpdateSuccess();
+      notifications.showSuccess('Usuario actualizado exitosamente');
       
       return updatedUser;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar usuario';
       setError(message);
-      notifications.showUpdateError(message);
+      notifications.showError('Error al actualizar usuario', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -215,12 +215,12 @@ export function useUsers() {
         )
       );
 
-      notifications.showDeleteSuccess();
+      notifications.showSuccess('Usuario eliminado exitosamente');
       
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar usuario';
       setError(message);
-      notifications.showDeleteError(message);
+      notifications.showError('Error al eliminar usuario', { description: message });
       throw err;
     } finally {
       setIsLoading(false);

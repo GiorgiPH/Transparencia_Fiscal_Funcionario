@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { estrategiasComunicacionService } from '@/services/estrategiasComunicacionService';
 import type { Noticia, CreateNoticiaData, UpdateNoticiaData, NoticiasQueryParams } from '@/types/estrategias-comunicacion';
-import { useCrudNotifications } from './useNotifications';
+import { useNotifications } from './useNotifications';
 
 export function useNoticias() {
   const [noticias, setNoticias] = useState<Noticia[]>([]);
@@ -11,7 +11,7 @@ export function useNoticias() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const notifications = useCrudNotifications("Noticia");
+  const notifications = useNotifications();
 
   const fetchNoticias = useCallback(async (params?: NoticiasQueryParams) => {
     setIsLoading(true);
@@ -19,12 +19,12 @@ export function useNoticias() {
     try {
       const data = await estrategiasComunicacionService.getNoticias(params);
       setNoticias(data);
-      notifications.showFetchSuccess();
+      notifications.showSuccess('Noticias cargadas exitosamente');
       return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cargar noticias';
       setError(message);
-      notifications.showFetchError(message);
+      notifications.showError('Error al cargar noticias', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -53,12 +53,12 @@ export function useNoticias() {
     try {
       const newNoticia = await estrategiasComunicacionService.createNoticia(data, file);
       setNoticias(prevNoticias => [...prevNoticias, newNoticia]);
-      notifications.showCreateSuccess();
+      notifications.showSuccess('Noticia creada exitosamente');
       return newNoticia;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear noticia';
       setError(message);
-      notifications.showCreateError(message);
+      notifications.showError('Error al crear noticia', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -83,13 +83,13 @@ export function useNoticias() {
         setCurrentNoticia(updatedNoticia);
       }
 
-      notifications.showUpdateSuccess();
+      notifications.showSuccess('Noticia actualizada exitosamente');
       
       return updatedNoticia;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar noticia';
       setError(message);
-      notifications.showUpdateError(message);
+      notifications.showError('Error al actualizar noticia', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -114,13 +114,13 @@ export function useNoticias() {
         setCurrentNoticia(updatedNoticia);
       }
 
-      notifications.showUpdateSuccess();
+      notifications.showSuccess('Estado de noticia actualizado exitosamente');
       
       return updatedNoticia;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cambiar estado de noticia';
       setError(message);
-      notifications.showUpdateError(message);
+      notifications.showError('Error al cambiar estado de noticia', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -138,12 +138,12 @@ export function useNoticias() {
         prevNoticias.filter(noticia => noticia.id !== id)
       );
 
-      notifications.showDeleteSuccess();
+      notifications.showSuccess('Noticia eliminada exitosamente');
       
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar noticia';
       setError(message);
-      notifications.showDeleteError(message);
+      notifications.showError('Error al eliminar noticia', { description: message });
       throw err;
     } finally {
       setIsLoading(false);

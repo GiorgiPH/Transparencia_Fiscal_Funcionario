@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { UserList } from './UserList';
 import { UserFormModal } from '@/components/features/admin/UserFormModal';
 import { useUsers } from '@/hooks/useUsers';
+import { useNotifications } from '@/hooks/useNotifications';
 import type { User, CreateUserData, UpdateUserData } from '@/types/auth';
 import { Button } from '../ui/button';
 import { Plus } from 'lucide-react';
@@ -30,6 +31,8 @@ export function UserListContainer({
     fetchAdminUserById,
     clearError,
   } = useUsers();
+
+  const notifications = useNotifications();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -59,12 +62,20 @@ export function UserListContainer({
   };
 
   const handleDeleteUser = async (user: User) => {
-    if (window.confirm(`¿Estás seguro de que deseas eliminar a ${user.nombre}?`)) {
-      try {
-        await deleteUser(parseInt(user.id));
-      } catch (err) {
-        console.error('Error al eliminar usuario:', err);
-      }
+    const confirmed = await notifications.confirmDelete(
+      `usuario "${user.nombre}"`,
+      'Esta acción no se puede deshacer.'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      await deleteUser(parseInt(user.id));
+    } catch (err) {
+      console.error('Error al eliminar usuario:', err);
+      notifications.showError('Error al eliminar usuario', {
+        description: 'Por favor, intente nuevamente.'
+      });
     }
   };
 

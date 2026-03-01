@@ -5,6 +5,7 @@ import { DocumentoModal } from './DocumentoModal';
 import { CatalogoFormModal } from './CatalogoFormModal';
 import { useCatalogs } from '@/hooks/useCatalogs';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -46,6 +47,7 @@ export function  CatalogoTreeItem({
   console.log(`🔵 [CatalogoTreeItem] Renderizando item ${item.id} "${item.nombre}", onRefresh existe?:`, !!onRefresh);
   
   const { user } = useAuth();
+  const notifications = useNotifications();
   const [isDocumentoModalOpen, setIsDocumentoModalOpen] = useState(false);
   const [isCatalogoModalOpen, setIsCatalogoModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
@@ -178,32 +180,22 @@ export function  CatalogoTreeItem({
   };
 
   const handleSubmitDocumentoModal = async (data: DocumentoCreateData | DocumentoUpdateData) => {
-    console.log('🔵 [CatalogoTreeItem] handleSubmitDocumentoModal llamado, modalMode:', modalMode);
-    console.log('🔵 [CatalogoTreeItem] onRefreshDocumentos existe?:', !!onRefreshDocumentos);
+
     
     try {
       if (modalMode === 'create') {
-        console.log('🔵 [CatalogoTreeItem] Creando documento...');
         await createDocument(data as FormData);
       } else {
-        console.log('🔵 [CatalogoTreeItem] Actualizando documento ID:', selectedDocumentoId);
         await updateDocument(selectedDocumentoId!, data as FormData);
       }
       
-      console.log('🔵 [CatalogoTreeItem] Documento guardado exitosamente');
       
       // Refrescar solo la disponibilidad de documentos usando el nuevo endpoint específico
       if (onRefreshDocumentos) {
-        console.log('🔵 [CatalogoTreeItem] Llamando a onRefreshDocumentos() con catalogoId:', item.id);
         await onRefreshDocumentos(item.id);
-        console.log('🔵 [CatalogoTreeItem] onRefreshDocumentos() completado');
       } else if (onRefresh) {
-        // Fallback al método antiguo si no hay onRefreshDocumentos
-        console.log('🔵 [CatalogoTreeItem] Llamando a onRefresh() con catalogoId:', item.id);
         await onRefresh(item.id);
-        console.log('🔵 [CatalogoTreeItem] onRefresh() completado');
       } else {
-        console.warn('⚠️ [CatalogoTreeItem] No hay método de refresco disponible!');
       }
       
       // Pequeño delay para asegurar que la UI se actualice
@@ -266,22 +258,15 @@ export function  CatalogoTreeItem({
 
   const handleDeleteCatalogo = async () => {
     // Validar si el catálogo tiene documentos
-    if (item._count?.documentos && item._count.documentos > 0) {
-      const confirmDelete = window.confirm(
-        `⚠️ ADVERTENCIA: Este catálogo tiene ${item._count.documentos} documento(s).\n\n` +
-        `¿Está seguro de que desea eliminar el catálogo "${item.nombre}"?\n` +
-        `Esta acción eliminará también todos los documentos asociados y no se puede deshacer.`
-      );
-      if (!confirmDelete) return;
-    } else {
-      const confirmDelete = window.confirm(
-        `¿Está seguro de que desea eliminar el catálogo "${item.nombre}"?\n` +
-        `Esta acción no se puede deshacer.`
-      );
-      if (!confirmDelete) return;
-    }
+    const hasDocuments = item._count?.documentos && item._count.documentos > 0;
+    const documentCount = item._count?.documentos || 0;
     
-    console.log('🔴 [CatalogoTreeItem] Eliminando catálogo ID:', item.id);
+    const confirmed = await notifications.confirmDelete(
+      `catálogo "${item.nombre}"`,
+      hasDocuments ? `Este catálogo tiene ${documentCount} documento(s) asociados. Esta acción eliminará también todos los documentos asociados y no se puede deshacer.` : undefined
+    );
+    
+    if (!confirmed) return;
     
     try {
       const success = await deleteCatalog(item.id);
@@ -292,11 +277,8 @@ export function  CatalogoTreeItem({
       // Refrescar el catálogo padre después de eliminar
       const parentId = item.parent_id || item.id;
       if (onRefreshCatalogo && parentId !== item.id) {
-        console.log('🔴 [CatalogoTreeItem] Llamando a onRefreshCatalogo() con catalogoId:', parentId);
         await onRefreshCatalogo(parentId);
-        console.log('🔴 [CatalogoTreeItem] onRefreshCatalogo() completado');
       } else if (onRefresh) {
-        console.log('🔴 [CatalogoTreeItem] Llamando a onRefresh() con catalogoId:', parentId);
         await onRefresh(parentId);
         console.log('🔴 [CatalogoTreeItem] onRefresh() completado');
       } else {
@@ -311,9 +293,13 @@ export function  CatalogoTreeItem({
   const handleDeleteDocumento = async (tipoDocumentoId: number, documentoId?: number) => {
     if (!documentoId) return;
     
-    // Confirmación antes de eliminar
-    const confirmDelete = window.confirm('¿Está seguro de que desea eliminar este documento? Esta acción no se puede deshacer.');
-    if (!confirmDelete) return;
+    // Confirmación antes de eliminar usando SweetAlert2
+    const confirmed = await notifications.confirmDelete(
+      'documento',
+      'Esta acción no se puede deshacer.'
+    );
+    
+    if (!confirmed) return;
     
     console.log('🔴 [CatalogoTreeItem] Eliminando documento ID:', documentoId);
     
@@ -341,7 +327,9 @@ export function  CatalogoTreeItem({
       
     } catch (error) {
       console.error('❌ [CatalogoTreeItem] Error al eliminar documento:', error);
-      alert('Error al eliminar el documento. Por favor, intente nuevamente.');
+      notifications.showError('Error al eliminar el documento', {
+        description: 'Por favor, intente nuevamente.'
+      });
       throw error;
     }
   };

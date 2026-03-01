@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { estrategiasComunicacionService } from '@/services/estrategiasComunicacionService';
 import type { RedSocial, CreateRedSocialData, UpdateRedSocialData, RedesSocialesQueryParams } from '@/types/estrategias-comunicacion';
-import { useCrudNotifications } from './useNotifications';
+import { useNotifications } from './useNotifications';
 
 export function useRedesSociales() {
   const [redesSociales, setRedesSociales] = useState<RedSocial[]>([]);
@@ -11,7 +11,7 @@ export function useRedesSociales() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const notifications = useCrudNotifications("Red Social");
+  const notifications = useNotifications();
 
   const fetchRedesSociales = useCallback(async (params?: RedesSocialesQueryParams) => {
     setIsLoading(true);
@@ -19,12 +19,12 @@ export function useRedesSociales() {
     try {
       const data = await estrategiasComunicacionService.getRedesSociales(params);
       setRedesSociales(data);
-      notifications.showFetchSuccess();
+      notifications.showSuccess('Redes sociales cargadas exitosamente');
       return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cargar redes sociales';
       setError(message);
-      notifications.showFetchError(message);
+      notifications.showError('Error al cargar redes sociales', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -53,12 +53,12 @@ export function useRedesSociales() {
     try {
       const newRedSocial = await estrategiasComunicacionService.createRedSocial(data);
       setRedesSociales(prevRedesSociales => [...prevRedesSociales, newRedSocial]);
-      notifications.showCreateSuccess();
+      notifications.showSuccess('Red social creada exitosamente');
       return newRedSocial;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear red social';
       setError(message);
-      notifications.showCreateError(message);
+      notifications.showError('Error al crear red social', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -83,13 +83,13 @@ export function useRedesSociales() {
         setCurrentRedSocial(updatedRedSocial);
       }
 
-      notifications.showUpdateSuccess();
+      notifications.showSuccess('Red social actualizada exitosamente');
       
       return updatedRedSocial;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar red social';
       setError(message);
-      notifications.showUpdateError(message);
+      notifications.showError('Error al actualizar red social', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -114,13 +114,13 @@ export function useRedesSociales() {
         setCurrentRedSocial(updatedRedSocial);
       }
 
-      notifications.showUpdateSuccess();
+      notifications.showSuccess('Estado de red social actualizado exitosamente');
       
       return updatedRedSocial;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cambiar estado de red social';
       setError(message);
-      notifications.showUpdateError(message);
+      notifications.showError('Error al cambiar estado de red social', { description: message });
       throw err;
     } finally {
       setIsLoading(false);
@@ -138,12 +138,12 @@ export function useRedesSociales() {
         prevRedesSociales.filter(redSocial => redSocial.id !== id)
       );
 
-      notifications.showDeleteSuccess();
+      notifications.showSuccess('Red social eliminada exitosamente');
       
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar red social';
       setError(message);
-      notifications.showDeleteError(message);
+      notifications.showError('Error al eliminar red social', { description: message });
       throw err;
     } finally {
       setIsLoading(false);

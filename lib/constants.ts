@@ -22,3 +22,14 @@ export const NAVIGATION_ITEMS = [
 ]
 
 export const USER_ROLES = ["Admin", "Upload", "Edit"] as const
+
+// Años disponibles para carga de documentos (2010 hasta el año actual)
+export const ANIOS_DISPONIBLES = (() => {
+  const currentYear = new Date().getFullYear();
+  const startYear = 2010;
+  const years = [];
+  for (let year = startYear; year <= currentYear; year++) {
+    years.push(year);
+  }
+  return years;
+})();

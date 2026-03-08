@@ -77,6 +77,7 @@ export interface Documento {
   activo: boolean
   institucion_emisora: string
   periodicidad_id: number
+  periodo_numero: number
   fecha_creacion: string
   fecha_modificacion: string
   usuario_creacion_id: number
@@ -90,6 +91,7 @@ export interface Document {
   nombre: string
   tipo: DocumentType
   periodicidad_id: Periodicity
+  periodo_numero: number
   categoria: string
   subcategoria: string
   archivo?: File
@@ -125,6 +127,7 @@ export interface DocumentoCreateData {
   catalogo_id: number
   tipo_documento_id: number
   periodicidad_id: string
+  periodo_numero: number
   archivo: File
   nombre?: string
   descripcion?: string
@@ -136,6 +139,7 @@ export interface DocumentoUpdateData {
   catalogo_id?: number
   tipo_documento_id?: number
   periodicidad_id?: string
+  periodo_numero: number
   archivo?: File
   nombre?: string
   descripcion?: string

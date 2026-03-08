@@ -8,26 +8,23 @@ import { Button } from "@/components/ui/button"
 import { Search, Edit, X } from "lucide-react"
 import { useCatalogs } from "@/hooks/useCatalogs"
 import { useAuth } from "@/hooks/useAuth"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function CatalogosPage() {
   const { user } = useAuth()
-  const { rootCatalogs, isLoading, refreshCatalogo, estadisticas } = useCatalogs()
+  const { rootCatalogs, loadRootCatalogs, isLoading, estadisticas, loadEstadisticas } = useCatalogs()
   const [isEditMode, setIsEditMode] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+
+  useEffect(() => {
+    loadEstadisticas()
+    loadRootCatalogs()
+  }, [loadEstadisticas])
 
   const canUpload = user?.rol === "Admin" || user?.rol === "Upload" || user?.rol === "Edit"
   const canEditCatalogs = user?.rol === "Admin" || user?.rol === "Edit" // Admin y Edit pueden editar catálogos
 
-  const handleRefreshCatalogo = async (catalogoId: number) => {
-    console.log("🟢 [CatalogosPage] handleRefreshCatalogo llamado con catalogoId:", catalogoId);
-    try {
-      await refreshCatalogo(catalogoId);
-      console.log("🟢 [CatalogosPage] refreshCatalogo completado exitosamente");
-    } catch (error) {
-      console.error("🔴 [CatalogosPage] Error en handleRefreshCatalogo:", error);
-    }
-  };
+
 
   if (isLoading) {
     return <Loading message="Cargando categorías..." />
@@ -265,7 +262,6 @@ export default function CatalogosPage() {
                 category={category} 
                 index={index + 1} 
                 canUpload={isEditMode ? false : canUpload} // Deshabilitar carga en modo edición
-                onRefresh={handleRefreshCatalogo}
                 isEditMode={isEditMode}
               />
             ))

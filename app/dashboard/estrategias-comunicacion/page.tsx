@@ -1,14 +1,20 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NoticiasContainer } from "@/components/patterns/NoticiasContainer"
 import { RedesSocialesContainer } from "@/components/patterns/RedesSocialesContainer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Megaphone, Newspaper, Share2 } from "lucide-react"
+import { useEstrategiasComunicacionStats } from "@/hooks/useEstrategiasComunicacionStats"
 
 export default function EstrategiasComunicacionPage() {
   const [activeTab, setActiveTab] = useState("noticias")
+  const { estadisticas, isLoading, error, fetchEstadisticas } = useEstrategiasComunicacionStats()
+
+  useEffect(() => {
+    fetchEstadisticas()
+  }, [fetchEstadisticas])
 
   return (
     <div className="space-y-6">
@@ -26,7 +32,9 @@ export default function EstrategiasComunicacionPage() {
             <Newspaper className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">--</div>
+            <div className="text-2xl font-bold">
+              {isLoading ? "..." : error ? "--" : estadisticas?.noticiasActivas ?? "--"}
+            </div>
             <p className="text-xs text-muted-foreground">
               Publicaciones activas en el portal
             </p>
@@ -39,7 +47,9 @@ export default function EstrategiasComunicacionPage() {
             <Share2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">--</div>
+            <div className="text-2xl font-bold">
+              {isLoading ? "..." : error ? "--" : estadisticas?.redesSocialesActivas ?? "--"}
+            </div>
             <p className="text-xs text-muted-foreground">
               Plataformas activas conectadas
             </p>
@@ -52,7 +62,11 @@ export default function EstrategiasComunicacionPage() {
             <Megaphone className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">--</div>
+            <div className="text-2xl font-bold">
+              {isLoading ? "..." : error ? "--" : 
+                ((estadisticas?.noticiasActivas ?? 0) + (estadisticas?.redesSocialesActivas ?? 0)) || "--"
+              }
+            </div>
             <p className="text-xs text-muted-foreground">
               Elementos de comunicación
             </p>

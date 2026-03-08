@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { ChevronDown, Folder } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Catalogo, CatalogoTreeItem as CatalogoTreeItemType } from "@/types/catalog"
 import { useCatalogs } from "@/hooks/useCatalogs"
 import { CatalogoTreeItem } from "@/components/patterns/CatalogoTreeItem"
+import { DocumentoModal } from "@/components/patterns/DocumentoModal"
 
 interface CategoryAccordionProps {
   category: Catalogo
@@ -19,7 +20,21 @@ export function CategoryAccordion({ category, index, canUpload, onRefresh, isEdi
   const [isOpen, setIsOpen] = useState(false)
   const [treeItems, setTreeItems] = useState<CatalogoTreeItemType[]>([])
   const [isLoadingChildren, setIsLoadingChildren] = useState(false)
-  const { loadCatalogChildren } = useCatalogs()
+  const [documentModalState, setDocumentModalState] = useState<{
+    catalogoId: number
+    mode: 'create' | 'edit'
+    tipoDocumentoId?: number
+    documentoId?: number
+    selectedYear?: number | null
+    selectedPeriod?: number | null
+  } | null>(null)
+  const {
+    loadCatalogChildren,
+    refreshDisponibilidadDocumentosPorPeriodo,
+    deleteDocument,
+    createDocument,
+    updateDocument,
+  } = useCatalogs()
 
   useEffect(() => {
     if (isOpen && treeItems.length === 0 && category._count?.children && category._count.children > 0) {
@@ -90,9 +105,9 @@ export function CategoryAccordion({ category, index, canUpload, onRefresh, isEdi
   ): CatalogoTreeItemType[] => {
     return items.map(item => {
       if (item.id === catalogId) {
-        console.log('🎯 Found item to update:', item.id, 'updates:', updates)
+        //console.log('🎯 Found item to update:', item.id, 'updates:', updates)
         const updated = { ...item, ...updates }
-        console.log('✨ Updated item:', updated)
+        //console.log('✨ Updated item:', updated)
         return updated
       }
       
@@ -123,19 +138,19 @@ export function CategoryAccordion({ category, index, canUpload, onRefresh, isEdi
     
     // Si ya está expandido, no hacer nada
     if (item.isExpanded) {
-      console.log('⚠️ Already expanded, skipping')
+      //console.log('⚠️ Already expanded, skipping')
       return
     }
     
     // Si no tiene hijos, no expandir
     if (!item._count?.children || item._count.children === 0) {
-      console.log('⚠️ No children to load')
+      //console.log('⚠️ No children to load')
       return
     }
     
     // Si ya tiene hijos cargados, solo expandir
     if (item.children && Array.isArray(item.children) && item.children.length > 0) {
-      console.log('📂 Children already loaded, just expanding')
+      //console.log('📂 Children already loaded, just expanding')
       setTreeItems(prev => updateTreeItemRecursive(prev, item.id, { isExpanded: true }))
       return
     }
@@ -169,11 +184,83 @@ export function CategoryAccordion({ category, index, canUpload, onRefresh, isEdi
 
   // Debug: Log cuando cambia treeItems
   useEffect(() => {
-    console.log('🌲 TreeItems updated:', treeItems.length, 'items')
     if (treeItems.length > 0) {
       console.log('First item:', treeItems[0])
     }
   }, [treeItems])
+
+  const findCatalogoRecursive = useCallback(
+    (items: CatalogoTreeItemType[], catalogId: number): CatalogoTreeItemType | null => {
+      for (const item of items) {
+        if (item.id === catalogId) return item
+        if (item.children?.length) {
+          const found = findCatalogoRecursive(item.children, catalogId)
+          if (found) return found
+        }
+      }
+      return null
+    },
+    []
+  )
+
+  const handleLoadDocumentsByPeriod = async (catalogoId: number, year: number, period?: number) => {
+    try {
+      const disponibilidad = await refreshDisponibilidadDocumentosPorPeriodo(
+        catalogoId,
+        year,
+        period
+      )
+      setTreeItems(prev =>
+        updateTreeItemRecursive(prev, catalogoId, {
+          disponibilidadTiposDocumento: disponibilidad.disponibilidadTiposDocumento,
+        })
+      )
+    } catch (error) {
+      console.error("❌ Error al cargar disponibilidad de documentos por periodo:", error)
+    }
+  }
+
+  const handleOpenDocumentoModal = useCallback(
+    (mode: 'create' | 'edit', catalogoId: number, tipoDocumentoId?: number, documentoId?: number, selectedYear?: number | null, selectedPeriod?: number | null) => {
+      setDocumentModalState({ catalogoId, mode, tipoDocumentoId, documentoId, selectedYear, selectedPeriod })
+    },
+    []
+  )
+
+  const handleCloseDocumentoModal = useCallback(() => {
+    setDocumentModalState(null)
+  }, [])
+
+  const handleDownloadDocumento = useCallback((documentoId: number) => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const downloadUrl = `${baseUrl}/busqueda-documentos/${documentoId}/descargar`
+    window.open(downloadUrl, '_blank')
+  }, [])
+
+  const handleDeleteDocumento = useCallback(
+    async (catalogoId: number, _tipoDocumentoId: number, documentoId?: number, selectedYear?: number | null, selectedPeriod?: number | null) => {
+      if (!documentoId) return
+      try {
+        await deleteDocument(documentoId)
+        // Solo refrescar si tenemos año y periodo
+        if (selectedYear !== null && selectedYear !== undefined) {
+          const disponibilidad = await refreshDisponibilidadDocumentosPorPeriodo(catalogoId, selectedYear, selectedPeriod ?? undefined)
+          setTreeItems(prev =>
+            updateTreeItemRecursive(prev, catalogoId, {
+              disponibilidadTiposDocumento: disponibilidad.disponibilidadTiposDocumento,
+            })
+          )
+        }
+      } catch (error) {
+        console.error("❌ Error al eliminar documento:", error)
+      }
+    },
+    [deleteDocument]
+  )
+
+  const documentModalCatalogo =
+    documentModalState &&
+    findCatalogoRecursive(treeItems, documentModalState.catalogoId)
 
   return (
     <div className="overflow-hidden rounded-lg border bg-card">
@@ -220,16 +307,25 @@ export function CategoryAccordion({ category, index, canUpload, onRefresh, isEdi
               {treeItems.map((item) => (
                 <div key={item.id} className="pl-4 border-l-2 border-muted">
                     <CatalogoTreeItem
+                      key={item.id}
                       item={item}
                       level={0}
-                      showDocumentos={isEditMode ? false : item.permite_documentos} // Deshabilitar documentos en modo edición
+                      showDocumentos={isEditMode ? false : item.permite_documentos}
                       onExpand={handleExpand}
                       onCollapse={handleCollapse}
                       onSelect={() => {}}
                       onRefresh={onRefresh}
-                      onRefreshCatalogo={onRefresh} // Usar el mismo callback para compatibilidad
-                      onRefreshDocumentos={onRefresh} // Usar el mismo callback para compatibilidad
+                      onRefreshDocumentos={onRefresh}
                       isEditMode={isEditMode}
+                      onCatalogoCreate={() => {}}
+                      onCatalogoEdit={() => {}}
+                      onCatalogoDelete={async () => true}
+                      onOpenDocumentoModal={handleOpenDocumentoModal}
+                      onOpenCatalogoModal={() => {}}
+                      onDeleteDocumento={handleDeleteDocumento}
+                      onDeleteCatalogo={async () => {}}
+                      onDownloadDocumento={handleDownloadDocumento}
+                      onLoadDocumentsByPeriod={handleLoadDocumentsByPeriod}
                     />
                 </div>
               ))}
@@ -242,6 +338,77 @@ export function CategoryAccordion({ category, index, canUpload, onRefresh, isEdi
             </div>
           )}
         </div>
+      )}
+
+      {/* Modal de documento (nivel que permite documentos) */}
+      {documentModalState && documentModalCatalogo && (
+        <DocumentoModal
+          isOpen={true}
+          onClose={handleCloseDocumentoModal}
+          onSubmit={async (data) => {
+            try {
+              // Crear FormData para enviar el archivo
+              const formData = new FormData()
+              
+              // Agregar campos básicos
+              formData.append('catalogo_id', documentModalState.catalogoId.toString())
+              if (data.tipo_documento_id != null) {
+                formData.append('tipo_documento_id', data.tipo_documento_id.toString())
+              }
+              
+              if (data.periodicidad_id != null) {
+                formData.append('periodicidad_id', data.periodicidad_id)
+              }
+              // Agregar campos opcionales si existen
+              if (data.nombre) {
+                formData.append('nombre', data.nombre)
+              }
+              if (data.descripcion) {
+                formData.append('descripcion', data.descripcion)
+              }
+              if (data.ejercicio_fiscal) {
+                formData.append('ejercicio_fiscal', data.ejercicio_fiscal.toString())
+              }
+              if (data.institucion_emisora) {
+                formData.append('institucion_emisora', data.institucion_emisora)
+              }
+              
+              // Agregar archivo si existe
+              if (data.archivo) {
+                formData.append('archivo', data.archivo)
+              }
+              
+              // Agregar número de periodo si está disponible
+              if (data.periodo_numero !== null) {
+                formData.append('periodo_numero', data.periodo_numero.toString())
+              }
+              
+              // Llamar a la API según el modo
+              if (documentModalState.mode === 'create') {
+                await createDocument(formData)
+              } else if (documentModalState.mode === 'edit' && documentModalState.documentoId) {
+                await updateDocument(documentModalState.documentoId, formData)
+              }
+              
+              // Refrescar disponibilidad del catálogo tras crear/actualizar
+              const disponibilidad = await refreshDisponibilidadDocumentosPorPeriodo(documentModalState.catalogoId, documentModalState.selectedYear!, documentModalState.selectedPeriod!)
+              setTreeItems(prev =>
+                updateTreeItemRecursive(prev, documentModalState.catalogoId, {
+                  disponibilidadTiposDocumento: disponibilidad.disponibilidadTiposDocumento,
+                })
+              )
+              handleCloseDocumentoModal()
+            } catch (error) {
+              console.error("❌ Error al guardar documento:", error)
+            }
+          }}
+          mode={documentModalState.mode}
+          catalogo={documentModalCatalogo}
+          documentoId={documentModalState.documentoId ?? null}
+          tipoDocumentoId={documentModalState.tipoDocumentoId ?? null}
+          selectedYear={documentModalState.selectedYear ?? null}
+          selectedPeriod={documentModalState.selectedPeriod ?? null}
+        />
       )}
     </div>
   )

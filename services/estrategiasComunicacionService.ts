@@ -139,6 +139,10 @@ export const estrategiasComunicacionService = {
     return apiClient.get<EstadisticasEstrategiasComunicacion>('/estrategias-comunicacion/admin/estadisticas');
   },
 
+  async getEstadisticasTotal(): Promise<EstadisticasEstrategiasComunicacion> {
+    return apiClient.get<EstadisticasEstrategiasComunicacion>('/estrategias-comunicacion/admin/estadisticas/total');
+  },
+
   async countNoticias(activo?: boolean): Promise<number> {
     const queryParams = new URLSearchParams();
     if (activo !== undefined) queryParams.append('activo', activo.toString());

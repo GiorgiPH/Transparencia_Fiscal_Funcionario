@@ -20,12 +20,10 @@ export function useUsers() {
     try {
       const data = await userService.getAdminUsers();
       setUsers(data);
-      notifications.showSuccess('Usuarios cargados exitosamente');
       return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cargar usuarios';
       setError(message);
-      notifications.showError('Error al cargar usuarios', { description: message });
       throw err;
     } finally {
       setIsLoading(false);

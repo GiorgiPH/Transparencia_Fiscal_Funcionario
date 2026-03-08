@@ -53,14 +53,14 @@ export function UserFormModal({ open, onClose, onSubmit, user, roles }: UserForm
     }
 
     loadDependencias()
-  }, [open, fetchDependenciasForUserSelection])
+  }, [open])
 
   // Establecer valores del usuario cuando se abre el modal y las dependencias están cargadas
   useEffect(() => {
     if (user && open && !isLoadingDependencias) {
       setName(user.nombre)
       setEmail(user.email)
-        setDependenciaId(user.dependenciaId)
+      setDependenciaId(user.dependenciaId)
 
       setTelefono(user.telefono || "")
       setRequiere2fa(user.requiere_2fa || false)

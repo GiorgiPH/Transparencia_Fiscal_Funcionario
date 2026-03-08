@@ -1,9 +1,10 @@
-"use client"
+ "use client"
 
 import { useEffect, useState } from 'react';
 import { UserList } from './UserList';
 import { UserFormModal } from '@/components/features/admin/UserFormModal';
 import { useUsers } from '@/hooks/useUsers';
+import { useUsersStats } from '@/hooks/useUsersStats';
 import { useNotifications } from '@/hooks/useNotifications';
 import type { User, CreateUserData, UpdateUserData } from '@/types/auth';
 import { Button } from '../ui/button';
@@ -32,6 +33,8 @@ export function UserListContainer({
     clearError,
   } = useUsers();
 
+  const { fetchStats } = useUsersStats();
+
   const notifications = useNotifications();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,6 +45,7 @@ export function UserListContainer({
     if (autoLoad) {
       fetchUsers();
       fetchRoles();
+      fetchStats();
     }
   }, [autoLoad]);
 
@@ -49,6 +53,7 @@ export function UserListContainer({
     clearError();
     fetchUsers();
     fetchRoles();
+    fetchStats();
   };
 
   const handleUserClick = (user: User) => {
@@ -71,6 +76,8 @@ export function UserListContainer({
     
     try {
       await deleteUser(parseInt(user.id));
+      // Actualizar estadísticas después de eliminar usuario
+      fetchStats();
     } catch (err) {
       console.error('Error al eliminar usuario:', err);
       notifications.showError('Error al eliminar usuario', {
@@ -93,6 +100,8 @@ export function UserListContainer({
         await updateUser(parseInt(selectedUser.id), data as UpdateUserData, file);
       }
       setIsModalOpen(false);
+      // Actualizar estadísticas después de crear o actualizar usuario
+      fetchStats();
     } catch (err) {
       console.error('Error al guardar usuario:', err);
       throw err;

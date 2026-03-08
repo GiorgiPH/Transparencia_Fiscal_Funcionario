@@ -18,6 +18,8 @@ interface DocumentoModalProps {
   catalogo: CatalogoTreeItem
   documentoId?: number | null
   tipoDocumentoId?: number | null
+  selectedYear?: number | null
+  selectedPeriod?: number | null
 }
 
 export function DocumentoModal({
@@ -27,17 +29,19 @@ export function DocumentoModal({
   mode,
   catalogo,
   documentoId,
-  tipoDocumentoId
+  tipoDocumentoId,
+  selectedYear,
+  selectedPeriod
 }: DocumentoModalProps) {
   const { fetchTiposDocumento, tiposDocumento, fetchDocumento, fetchPeriodicidades, periodicidades } = useCatalogs()
   
   const [formData, setFormData] = useState({
     tipo_documento_id: '',
-    periodicidad: '',
+    periodicidad_id: '',
     archivo: null as File | null,
     nombre: '',
     descripcion: '',
-    ejercicio_fiscal: new Date().getFullYear().toString(),
+    ejercicio_fiscal: (selectedYear || new Date().getFullYear()).toString(),
     institucion_emisora: '',
   })
 
@@ -81,7 +85,7 @@ export function DocumentoModal({
     if (!isOpen) {
       setFormData({
         tipo_documento_id: '',
-        periodicidad: '',
+        periodicidad_id: '',
         archivo: null,
         nombre: '',
         descripcion: '',
@@ -114,7 +118,7 @@ export function DocumentoModal({
       const documento = await fetchDocumento(id)
       setFormData({
         tipo_documento_id: documento.tipo_documento_id.toString(),
-        periodicidad: documento.periodicidad_id.toString(),
+        periodicidad_id: documento.periodicidad_id.toString(),
         archivo: null,
         nombre: documento.nombre,
         descripcion: documento.descripcion,
@@ -152,7 +156,7 @@ export function DocumentoModal({
       return
     }
 
-    if (!formData.periodicidad) {
+    if (!formData.periodicidad_id) {
       setError('Seleccione una periodicidad')
       return
     }
@@ -169,7 +173,7 @@ export function DocumentoModal({
       const submitData: any = {
         catalogo_id: catalogo.id,
         tipo_documento_id: parseInt(formData.tipo_documento_id),
-        periodicidad: formData.periodicidad,
+        periodicidad_id: formData.periodicidad_id,
       }
 
       if (formData.archivo) {
@@ -190,6 +194,11 @@ export function DocumentoModal({
 
       if (formData.institucion_emisora) {
         submitData.institucion_emisora = formData.institucion_emisora
+      }
+
+      // Agregar el número de periodo si está disponible
+      if (selectedPeriod !== null && selectedPeriod !== undefined) {
+        submitData.periodo_numero = selectedPeriod
       }
 
       await onSubmit(submitData)
@@ -310,24 +319,24 @@ export function DocumentoModal({
 
           {/* Periodicidad */}
           <div>
-            <Label htmlFor="periodicidad">Periodicidad *</Label>
+            <Label htmlFor="periodicidad_id">Periodicidad *</Label>
             <Select
-              value={formData.periodicidad}
-              onValueChange={(value) => handleSelectChange('periodicidad', value)}
+              value={formData.periodicidad_id}
+              onValueChange={(value) => handleSelectChange('periodicidad_id', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccione periodicidad">
-                  {formData.periodicidad 
-                    ? periodicidadesOptions.find(p => p.value === formData.periodicidad)?.label
+                  {formData.periodicidad_id 
+                    ? periodicidadesOptions.find(p => p.value === formData.periodicidad_id)?.label
                     : 'Seleccione periodicidad'}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {periodicidadesOptions.map((periodicidad) => (
-                  <SelectItem key={periodicidad.value} value={periodicidad.value}>
+                {periodicidadesOptions.map((periodicidad_id) => (
+                  <SelectItem key={periodicidad_id.value} value={periodicidad_id.value}>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      <span>{periodicidad.label}</span>
+                      <span>{periodicidad_id.label}</span>
                     </div>
                   </SelectItem>
                 ))}

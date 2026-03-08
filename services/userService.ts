@@ -242,4 +242,19 @@ export const userService = {
       fileSize: file.size,
     };
   },
+
+  // Estadísticas de usuarios
+  async getUsersStats(): Promise<{
+    totalUsuariosActivos: number;
+    totalUsuariosInactivos: number;
+    totalUsuariosAdmin: number;
+    totalUsuariosCarga: number;
+    totalUsuariosEdicion: number;
+    totalUsuariosCon2FA: number;
+    totalUsuariosConFotoPerfil: number;
+    totalUsuariosConDependencia: number;
+    totalUsuariosUltimoMes: number;
+  }> {
+    return apiClient.get('/admin/users/estadisticas/total');
+  },
 };

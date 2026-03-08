@@ -68,11 +68,11 @@ export interface UpdateRedSocialData {
 // Estadísticas
 export interface EstadisticasEstrategiasComunicacion {
   totalNoticias: number;
-  totalNoticiasActivas: number;
-  totalNoticiasInactivas: number;
-  totalRedesSociales: number;
-  totalRedesSocialesActivas: number;
-  totalRedesSocialesInactivas: number;
+  noticiasActivas: number;
+  noticiasInactivas: number;
+  redesSociales: number;
+  redesSocialesActivas: number;
+  redesSocialesInactivas: number;
   noticiasPorMes: Array<{
     mes: string;
     cantidad: number;

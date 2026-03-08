@@ -347,6 +347,42 @@ export const catalogService = {
     )
   },
 
+  // Obtener disponibilidad de documentos por catálogo, año y periodo
+  async getDocumentAvailabilityByPeriod(
+    catalogoId: number,
+    ejercicioFiscal: number,
+    periodoId?: number
+  ): Promise<DocumentAvailabilityResponse> {
+    return withMockFallback(
+      () => {
+        const params = new URLSearchParams();
+        params.append('catalogoId', catalogoId.toString());
+        params.append('ejercicioFiscal', ejercicioFiscal.toString());
+        if (periodoId !== undefined) {
+          params.append('periodoId', periodoId.toString());
+        }
+        
+        return apiClient.get<DocumentAvailabilityResponse>(`/admin/documentos/periodo?${params.toString()}`);
+      },
+      // Mock data para desarrollo
+      {
+        id: catalogoId,
+        nombre: "Catálogo Mock",
+        permite_documentos: true,
+        disponibilidadTiposDocumento: mockDocumentTypes.map(tipo => ({
+          tipoDocumentoId: tipo.id,
+          nombre: tipo.nombre,
+          disponible: Math.random() > 0.5,
+          extension: tipo.extension,
+          ...(Math.random() > 0.5 ? {
+            documentoId: Math.floor(Math.random() * 1000),
+            documentoNombre: `Documento ${tipo.nombre} ${ejercicioFiscal}${periodoId ? ` Periodo ${periodoId}` : ''}`
+          } : {})
+        }))
+      }
+    )
+  },
+
   // Crear catálogo
   async createCatalog(data: CreateCatalogoData): Promise<Catalogo> {
     return apiClient.post<Catalogo>("/admin/catalogos", data)

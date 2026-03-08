@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { catalogService, type CreateCatalogoData, type UpdateCatalogoData, type EstadisticasCatalogos } from "@/services/catalogService"
 import type { Catalogo, Documento, TipoDocumento, CatalogoTreeItem, Periodicidad } from "@/types/catalog"
 import { useNotifications } from "./useNotifications"
@@ -9,38 +9,42 @@ export function useCatalogs() {
   const [rootCatalogs, setRootCatalogs] = useState<Catalogo[]>([])
   const [catalogosTree, setCatalogosTree] = useState<CatalogoTreeItem[]>([])
   const [estadisticas, setEstadisticas] = useState<EstadisticasCatalogos | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [isLoadingEstadisticas, setIsLoadingEstadisticas] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [documentTypes, setDocumentTypes] = useState<TipoDocumento[]>([])
   const [periodicidades, setPeriodicidades] = useState<Periodicidad[]>([])
   const notifications = useNotifications()
 
-  useEffect(() => {
-    loadRootCatalogs()
-    loadDocumentTypes()
-    loadPeriodicidades()
-    fetchCatalogoTree()
-    loadEstadisticas()
-  }, [])
+  // Estado para controlar qué datos ya se cargaron
+  const [loadedData, setLoadedData] = useState({
+    rootCatalogs: false,
+    documentTypes: false,
+    periodicidades: false,
+    catalogosTree: false,
+    estadisticas: false,
+  })
 
-  const loadRootCatalogs = async () => {
+
+  const loadRootCatalogs = useCallback(async () => {
     try {
       setIsLoading(true)
       const data = await catalogService.getRootCatalogs()
       setRootCatalogs(data)
+      setLoadedData(prev => ({ ...prev, rootCatalogs: true }))
     } catch (err) {
       setError("Error al cargar catálogos raíz")
       console.error(err)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   const loadDocumentTypes = async () => {
     try {
       const data = await catalogService.getDocumentTypes()
       setDocumentTypes(data)
+      setLoadedData(prev => ({ ...prev, documentTypes: true }))
     } catch (err) {
       console.error("Error al cargar tipos de documento:", err)
     }
@@ -50,22 +54,24 @@ export function useCatalogs() {
     try {
       const data = await catalogService.getPeriodicidades()
       setPeriodicidades(data)
+      setLoadedData(prev => ({ ...prev, periodicidades: true }))
     } catch (err) {
       console.error("Error al cargar periodicidades:", err)
     }
   }
 
-  const loadEstadisticas = async () => {
+  const loadEstadisticas = useCallback(async () => {
     try {
       setIsLoadingEstadisticas(true)
       const data = await catalogService.getEstadisticas()
       setEstadisticas(data)
+      setLoadedData(prev => ({ ...prev, estadisticas: true }))
     } catch (err) {
       console.error("Error al cargar estadísticas:", err)
     } finally {
       setIsLoadingEstadisticas(false)
     }
-  }
+  }, [])
 
   const loadCatalogChildren = async (catalogId: number): Promise<Catalogo[]> => {
     try {
@@ -186,7 +192,7 @@ export function useCatalogs() {
     }
   }
 
-  // Métodos para árbol de catálogos
+
   const fetchCatalogoTree = async (): Promise<CatalogoTreeItem[]> => {
     try {
       setIsLoading(true)
@@ -199,6 +205,7 @@ export function useCatalogs() {
         hasChildren: (catalog._count?.children || 0) > 0
       }))
       setCatalogosTree(treeItems)
+      setLoadedData(prev => ({ ...prev, catalogosTree: true }))
       return treeItems
     } catch (err) {
       setError("Error al cargar árbol de catálogos")
@@ -239,22 +246,11 @@ export function useCatalogs() {
     updateTreeItem(catalogId, { isExpanded: false })
   }
 
-  const refreshCatalogo = async (catalogId: number): Promise<void> => {
-    try {
-      // Obtener el catálogo actualizado con disponibilidadTiposDocumento
-      const catalogoActualizado = await catalogService.getCatalogChildren(catalogId)
-      // Nota: getCatalogChildren devuelve un array, necesitamos encontrar el catálogo específico
-      // Para simplificar, recargaremos todos los hijos del padre
-      // En una implementación más avanzada, podríamos tener un endpoint para un catálogo específico
-      
-      // Por ahora, recargamos todo el árbol
-      await fetchCatalogoTree()
-    } catch (err) {
-      console.error("Error al refrescar catálogo:", err)
-    }
-  }
+
+
 
   
+
   const refreshDisponibilidadDocumentos = async (catalogId: number): Promise<any> => {
     try {
       // Usar el nuevo endpoint que obtiene solo la disponibilidad de documentos
@@ -268,6 +264,31 @@ export function useCatalogs() {
       return disponibilidad
     } catch (err) {
       console.error("Error al refrescar disponibilidad de documentos:", err)
+      throw err
+    }
+  }
+
+  const refreshDisponibilidadDocumentosPorPeriodo = async (
+    catalogId: number,
+    ejercicioFiscal: number,
+    periodoId?: number
+  ): Promise<any> => {
+    try {
+      // Usar el nuevo endpoint que obtiene la disponibilidad por periodo
+      const disponibilidad = await catalogService.getDocumentAvailabilityByPeriod(
+        catalogId,
+        ejercicioFiscal,
+        periodoId
+      )
+      
+      // Actualizar solo la disponibilidad del catálogo
+      updateTreeItem(catalogId, {
+        disponibilidadTiposDocumento: disponibilidad.disponibilidadTiposDocumento
+      })
+      
+      return disponibilidad
+    } catch (err) {
+      console.error("Error al refrescar disponibilidad de documentos por periodo:", err)
       throw err
     }
   }
@@ -304,6 +325,10 @@ export function useCatalogs() {
     await loadDocumentTypes()
   }
 
+  const fetchRootCatalogs = useCallback(async (): Promise<void> => {
+    await loadRootCatalogs()
+  }, [loadRootCatalogs])
+
   const fetchPeriodicidades = async (): Promise<void> => {
     await loadPeriodicidades()
   }
@@ -316,20 +341,6 @@ export function useCatalogs() {
     return documento
   }
 
-  // Métodos legacy para compatibilidad
-  const loadCategories = async () => {
-    try {
-      setIsLoading(true)
-      const data = await catalogService.getCategories()
-      return data
-    } catch (err) {
-      setError("Error al cargar categorías")
-      console.error(err)
-      return []
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const loadSubcategories = async (categoryId: string): Promise<any[]> => {
     try {
@@ -373,10 +384,10 @@ export function useCatalogs() {
     createDocument,
     updateDocument,
     deleteDocument,
-    fetchCatalogoTree,
+    loadRootCatalogs,
     expandCatalogo,
     collapseCatalogo,
-    refreshCatalogo,
+
     clearError,
     
     // Métodos CRUD para catálogos
@@ -387,11 +398,13 @@ export function useCatalogs() {
     
     // Nuevos métodos para refresco específico
     refreshDisponibilidadDocumentos,
+    refreshDisponibilidadDocumentosPorPeriodo,
     
     // Métodos para estadísticas
     loadEstadisticas,
     
     // Alias para compatibilidad
+    fetchRootCatalogs,
     fetchTiposDocumento,
     fetchPeriodicidades,
     fetchDocumento,

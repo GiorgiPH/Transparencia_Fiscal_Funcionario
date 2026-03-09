@@ -58,21 +58,20 @@ export function useDependencias() {
   /**
    * Obtener dependencias para selección de usuario (tercer nivel)
    */
-  const fetchDependenciasForUserSelection = useCallback(async (): Promise<Dependencia[]> => {
+  const fetchDependenciasForUserSelection = useCallback(async () => {
     setIsLoading(true)
     setError(null)
+
     try {
       const data = await DependenciaService.getDependenciasForUserSelection()
-      return data
+      setDependencias(data)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al cargar dependencias para selección'
+      const message = err instanceof Error ? err.message : 'Error al cargar dependencias'
       setError(message)
-      notifications.showError('Error al cargar dependencias', { description: message })
-      throw err
     } finally {
       setIsLoading(false)
     }
-  }, [notifications])
+  }, [])
 
   /**
    * Obtener una dependencia por ID

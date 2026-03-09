@@ -48,29 +48,31 @@ export function DocumentoModal({
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingDocumento, setIsLoadingDocumento] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
   useEffect(() => {
-    if (isOpen) {
-
-      loadTiposDocumento()
-      loadPeriodicidadesFromApi()
+    const init = async () => {
+      if (!isOpen) return
+  
+      await loadTiposDocumento()
+      await loadPeriodicidadesFromApi()
+  
       if (mode === 'edit' && documentoId) {
-        loadDocumento(documentoId)
-      } else if (mode === 'create' && tipoDocumentoId !== null && tipoDocumentoId !== undefined) {
-        setTimeout(() => {
-        setFormData(prev => {
-          const newFormData = {
-            ...prev,
-            tipo_documento_id: tipoDocumentoId.toString()
-          }
-          return newFormData
-        })
-        }, 1000);
-        // Inicializar el tipo de documento cuando se abre en modo create
-        
+        await loadDocumento(documentoId)
+      } else if (
+        mode === 'create' &&
+        tipoDocumentoId !== null &&
+        tipoDocumentoId !== undefined
+      ) {
+        setFormData(prev => ({
+          ...prev,
+          tipo_documento_id: tipoDocumentoId.toString()
+        }))
       }
     }
+  
+    init()
   }, [isOpen, mode, documentoId, tipoDocumentoId])
+
+ 
 
   // Efecto para actualizar el nombre del tipo de documento cuando tiposDocumento cambie
   useEffect(() => {
@@ -318,7 +320,7 @@ export function DocumentoModal({
         )}
 
           {/* Periodicidad */}
-          <div>
+          {/* <div>
             <Label htmlFor="periodicidad_id">Periodicidad *</Label>
             <Select
               value={formData.periodicidad_id}
@@ -342,7 +344,7 @@ export function DocumentoModal({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
 
           {/* Archivo (solo para crear o actualizar) */}
           <div>

@@ -242,6 +242,14 @@ function CatalogoTreeItemComponent({
     // Periodicity change logic
   }, []);
 
+  const handleClearDocuments = useCallback(() => {
+    // Limpiar los documentos cuando se cambia el año
+    // Esto se puede hacer llamando a onRefreshDocumentos para recargar sin documentos
+    if (onRefreshDocumentos) {
+      onRefreshDocumentos(item.id);
+    }
+  }, [onRefreshDocumentos, item.id]);
+
   return (
     <div className="select-none">
       <div
@@ -381,6 +389,7 @@ function CatalogoTreeItemComponent({
                onPeriodChange={handlePeriodChange}
                onPeriodicityChange={handlePeriodicityChange}
                onLoadDocuments={handleLoadDocumentsByPeriod}
+               onClearDocuments={handleClearDocuments}
              />
            </div>
            

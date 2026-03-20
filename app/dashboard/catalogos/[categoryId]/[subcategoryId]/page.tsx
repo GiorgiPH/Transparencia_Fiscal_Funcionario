@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Container } from "@/components/shared/Container"
 import { Loading } from "@/components/shared/Loading"
-import { DocumentUploadModal } from "@/components/features/catalogs/DocumentUploadModal"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronLeft, Upload, FileIcon, Calendar, User } from "lucide-react"
@@ -94,10 +93,7 @@ export default function SubcategoryPage({ params }: { params: { categoryId: stri
                     <span className="font-medium">Tipo:</span>
                     <span>{doc.tipo}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4" />
-                    <span>{doc.periodicidad}</span>
-                  </div>
+                  
                   <div className="flex items-center gap-1.5">
                     <User className="h-4 w-4" />
                     <span>{doc.uploadedBy}</span>
@@ -119,12 +115,7 @@ export default function SubcategoryPage({ params }: { params: { categoryId: stri
         )}
 
         {/* Upload Modal */}
-        <DocumentUploadModal
-          open={uploadModalOpen}
-          onClose={() => setUploadModalOpen(false)}
-          onUpload={handleUpload}
-          subcategoryName={subcategoryName}
-        />
+     
       </div>
     </Container>
   )

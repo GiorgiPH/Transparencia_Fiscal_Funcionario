@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 import { useCatalogs } from "@/hooks/useCatalogs"
 import type { Subcategory } from "@/types/catalog"
-import { THEMATIC_CATEGORIES } from "@/types/catalog"
 
 export default function CategoryPage({ params }: { params: { categoryId: string } }) {
   const router = useRouter()
@@ -19,7 +18,6 @@ export default function CategoryPage({ params }: { params: { categoryId: string 
 
   // Get category name from ID
   const categoryIndex = Number.parseInt(params.categoryId.split("-")[1]) - 1
-  const categoryName = THEMATIC_CATEGORIES[categoryIndex] || "Categoría"
 
   useEffect(() => {
     loadData()
@@ -47,7 +45,6 @@ export default function CategoryPage({ params }: { params: { categoryId: string 
 
         {/* Header */}
         <div>
-          <h1 className="text-balance text-3xl font-bold tracking-tight text-foreground">{categoryName}</h1>
           <p className="mt-2 text-pretty text-muted-foreground">
             Seleccione una subcategoría para gestionar documentos
           </p>

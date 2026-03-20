@@ -158,11 +158,11 @@ export function DocumentoModal({
       return
     }
 
-    if (!formData.periodicidad_id) {
+    /*if (!formData.periodicidad_id) {
       setError('Seleccione una periodicidad')
       return
     }
-
+*/
     if (mode === 'create' && !formData.archivo) {
       setError('Seleccione un archivo')
       return

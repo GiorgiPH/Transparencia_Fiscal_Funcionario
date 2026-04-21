@@ -175,7 +175,6 @@ export function DocumentoModal({
       const submitData: any = {
         catalogo_id: catalogo.id,
         tipo_documento_id: parseInt(formData.tipo_documento_id),
-        periodicidad_id: formData.periodicidad_id,
       }
 
       if (formData.archivo) {

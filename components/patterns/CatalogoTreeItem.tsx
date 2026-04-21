@@ -379,29 +379,31 @@ function CatalogoTreeItemComponent({
       )}
 
       {/* Documentos section (only for leaf nodes that allow documents) */}
-      {permiteDocumentos && item.disponibilidadTiposDocumento && (
-         <div style={{ paddingLeft: `${(level + 1) * 24 + 12}px` }} className="mt-3 space-y-4">
-           {/* Year and Period Selectors */}
-           <div className="mb-4">
-             <PeriodicidadSelectors
-               catalogoId={item.id}
-               onYearChange={handleYearChange}
-               onPeriodChange={handlePeriodChange}
-               onPeriodicityChange={handlePeriodicityChange}
-               onLoadDocuments={handleLoadDocumentsByPeriod}
-               onClearDocuments={handleClearDocuments}
-             />
-           </div>
+      {permiteDocumentos && (
+        <div style={{ paddingLeft: `${(level + 1) * 24 + 12}px` }} className="mt-3 space-y-4">
+          
+          {/* ✅ SIEMPRE mostrar periodicidad */}
+          <div className="mb-4">
+            <PeriodicidadSelectors
+              catalogoId={item.id}
+              onYearChange={handleYearChange}
+              onPeriodChange={handlePeriodChange}
+              onPeriodicityChange={handlePeriodicityChange}
+              onLoadDocuments={handleLoadDocumentsByPeriod}
+              onClearDocuments={handleClearDocuments}
+            />
+          </div>
            
-           <Card className="shadow-sm">
-             <CardHeader className="pb-3 space-y-0">
-               <div className="flex items-center justify-between">
-                 <CardTitle className="text-base font-medium">Documentos disponibles</CardTitle>
-                 <Badge variant="secondary" className="text-xs">
-                   {item.disponibilidadTiposDocumento.filter(d => d.disponible).length}/{item.disponibilidadTiposDocumento.length}
-                 </Badge>
-               </div>
-             </CardHeader>
+           {item.disponibilidadTiposDocumento  && (
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3 space-y-0">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base font-medium">Documentos disponibles</CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    {item.disponibilidadTiposDocumento.filter(d => d.disponible).length}/{item.disponibilidadTiposDocumento.length}
+                  </Badge>
+                </div>
+              </CardHeader>
              <CardContent className="pt-0">
                <div className="space-y-2">
                  {item.disponibilidadTiposDocumento.map((tipo) => (
@@ -502,6 +504,7 @@ function CatalogoTreeItemComponent({
                </div>
              </CardContent>
            </Card>
+           )}
          </div>
       )}
     </div>
